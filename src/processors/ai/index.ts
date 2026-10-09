@@ -42,6 +42,7 @@ export const regexAssistant = textTask("regexAssistant");
 export const sqlAssistant = textTask("sqlAssistant");
 export const codeExplain = textTask("codeExplain");
 export const excelFormula = textTask("excelFormula");
+export const aiDetect = textTask("aiDetect");
 
 /** Read a document to text in the browser. */
 async function fileToText(file: File, onProgress?: (f: number, l?: string) => void): Promise<string> {

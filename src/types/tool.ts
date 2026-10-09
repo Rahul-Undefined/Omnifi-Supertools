@@ -9,6 +9,7 @@ export type ToolCategoryId =
   | "files"
   | "text"
   | "utilities"
+  | "insights"
   | "ai";
 
 export type ToolKind =

@@ -11,6 +11,7 @@ export const categories: ToolCategory[] = [
   { id: "files", name: "Files", description: "Archives, hashes, metadata and encoding.", icon: "FolderArchive" },
   { id: "text", name: "Text", description: "Count, clean, sort, compare and convert text.", icon: "Type" },
   { id: "utilities", name: "Everyday", description: "Time zones, currency conversion, typing test.", icon: "Globe2" },
+  { id: "insights", name: "Checks & generators", description: "AI-writing signals, readability, similarity, passwords, test data, invoices, speech.", icon: "Wand2" },
   { id: "ai", name: "AI", description: "Summarize, extract, translate and rewrite with a configured AI provider.", icon: "Sparkles" },
 ];
 

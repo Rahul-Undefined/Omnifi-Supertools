@@ -86,6 +86,11 @@ export const tasks: Record<string, TaskSpec> = {
     build: (i) => `Write an Excel formula for: ${i}\n\nReturn the formula on the first line, then a short explanation and one caveat.`,
     maxTokens: 600,
   },
+  aiDetect: {
+    system: `${BASE} You assess whether text was likely produced by a language model. Be calibrated: say clearly that no method is conclusive.`,
+    build: (i) => `Assess the following text. Reply with: a probability band (unlikely / possible / likely AI-assisted), three concrete observations from the text that support your view, two observations that cut against it, and one sentence on what a reviewer should check next. Do not claim certainty.\n\n${wrap(i)}`,
+    maxTokens: 700,
+  },
   invoiceExtract: {
     system: `${BASE} Extract invoice data as JSON only. Use null when a field is absent. Amounts are numbers, dates are ISO (YYYY-MM-DD).`,
     build: (i) => `Extract: vendor_name, vendor_address, invoice_number, invoice_date, due_date, po_number, currency, subtotal, tax, total, payment_terms, line_items (array of {description, quantity, unit_price, amount}).\n\n${wrap(i)}`,

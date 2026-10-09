@@ -14,3 +14,6 @@ export const typing = interactive("Typing test");
 export const organize = interactive("Page organiser");
 export const redact = interactive("Redact PDF");
 export const fillForm = interactive("Fill PDF form");
+export const invoice = interactive("Invoice generator");
+export const tts = interactive("Text to speech");
+export const dictation = interactive("Dictation");

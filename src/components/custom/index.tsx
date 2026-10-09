@@ -7,6 +7,9 @@ const components: Record<string, ComponentType> = {
   "custom.typing": dynamic(() => import("./TypingTest").then((m) => m.TypingTest), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-control bg-surface-2" /> }),
   "custom.organize": dynamic(() => import("./PageOrganizer").then((m) => m.PageOrganizer), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-control bg-surface-2" /> }),
   "custom.redact": dynamic(() => import("./PdfRedactor").then((m) => m.PdfRedactor), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-control bg-surface-2" /> }),
+  "custom.invoice": dynamic(() => import("./InvoiceGenerator").then((m) => m.InvoiceGenerator), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-control bg-surface-2" /> }),
+  "custom.tts": dynamic(() => import("./SpeechTools").then((m) => m.TextToSpeech), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-control bg-surface-2" /> }),
+  "custom.dictation": dynamic(() => import("./SpeechTools").then((m) => m.Dictation), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-control bg-surface-2" /> }),
   "custom.fillForm": dynamic(() => import("./PdfFormFiller").then((m) => m.PdfFormFiller), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-control bg-surface-2" /> }),
 };
 

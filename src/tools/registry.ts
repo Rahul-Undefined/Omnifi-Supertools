@@ -12,6 +12,7 @@ import { fileTools } from "./definitions/files";
 import { textTools } from "./definitions/text";
 import { aiTools } from "./definitions/ai";
 import { utilityTools } from "./definitions/utilities";
+import { insightTools } from "./definitions/insights";
 
 /**
  * Central tool registry. Every tool in the platform is declared here.
@@ -29,6 +30,7 @@ export const tools: ToolDefinition[] = [
   ...fileTools,
   ...textTools,
   ...utilityTools,
+  ...insightTools,
   ...aiTools,
 ];
 
