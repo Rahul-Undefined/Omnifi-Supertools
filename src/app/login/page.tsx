@@ -17,7 +17,7 @@ export default function LoginPage() {
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next") || "/";
+  const next = params.get("next") || "/admin";
   const { user, refresh } = useSession();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -59,6 +59,7 @@ function LoginForm() {
           <Logo href={null} />
           <h1 className="mt-6 text-2xl font-semibold text-foreground">Sign in<span className="brand-dot">.</span></h1>
           <p className="mt-1 text-sm text-muted">Sign in to access the admin dashboard. Tools work without signing in.</p>
+          <p className="mt-1 text-xs text-muted">Username is <code className="font-mono">admin</code> unless your administrator set up named accounts.</p>
           {meta && meta.mode === "header" ? (
             <p className="mt-6 rounded-control-sm bg-surface-2 px-4 py-3 text-sm text-body">Sign-in is handled by your identity provider. If you can read this, the proxy did not pass your identity through. Contact the SuperTools admin.</p>
           ) : meta && !meta.configured ? (
