@@ -16,8 +16,10 @@ export function Logo({ className, size = "md", href = "/" }: { className?: strin
       <img src="/branding/omnifi-logo.svg" alt="OmniFi" width={w} height={h} className="block dark:hidden" style={{ height: h, width: w }} />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/branding/omnifi-logo-white.svg" alt="OmniFi" width={w} height={h} className="hidden dark:block" style={{ height: h, width: w }} />
-      <span aria-hidden className="mb-[3px] h-5 w-px bg-border-strong" />
-      <span className={cn("font-semibold leading-none tracking-tight text-foreground", size === "lg" ? "mb-[3px] text-2xl" : size === "sm" ? "mb-[2px] text-sm" : "mb-[3px] text-lg")}>
+      <span aria-hidden className="mb-[2px] h-5 w-px bg-border-strong" />
+      {/* Baseline alignment: the wordmark's baseline sits at the very bottom of the SVG, while a
+          text box keeps ~0.22em of descender space below its baseline, so the text is pushed down by that amount. */}
+      <span className={cn("font-semibold leading-none tracking-tight text-foreground", size === "lg" ? "-mb-[5px] text-2xl" : size === "sm" ? "-mb-[3px] text-sm" : "-mb-[4px] text-lg")}>
         SuperTools
       </span>
     </span>
