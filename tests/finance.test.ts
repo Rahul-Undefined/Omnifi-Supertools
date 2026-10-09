@@ -1,0 +1,105 @@
+import { describe, it, expect } from "vitest";
+import * as c from "@/processors/finance/calculators";
+import { parseAmount } from "@/processors/shared/amounts";
+import { parseDate, formatDate } from "@/processors/shared/dates";
+
+describe("finance calculators", () => {
+  it("gst exclusive and inclusive", () => {
+    expect(c.gst(1000, 18, false)).toEqual({ net: 1000, tax: 180, gross: 1180 });
+    const inc = c.gst(1180, 18, true);
+    expect(inc.net).toBeCloseTo(1000);
+    expect(inc.tax).toBeCloseTo(180);
+  });
+  it("percentage modes", () => {
+    expect(c.percentage("of", 15, 200).value).toBe(30);
+    expect(c.percentage("is", 30, 200).value).toBe(15);
+    expect(c.percentage("change", 100, 150).value).toBe(50);
+    expect(c.percentage("is", 1, 0).value).toBe(0);
+  });
+  it("margin / markup / discount", () => {
+    expect(c.margin(60, 100)).toEqual({ profit: 40, marginPct: 40, markupPct: expect.closeTo(66.67, 1) });
+    expect(c.markup(60, 40).price).toBeCloseTo(84);
+    expect(c.discount(100, 15)).toEqual({ final: 85, saved: 15 });
+  });
+  it("emi matches a known amortising loan", () => {
+    // 500,000 at 9% for 60 months ≈ 10,379 per month
+    expect(c.emi(500000, 9, 60).emi).toBeCloseTo(10379, 0);
+    expect(c.emi(1200, 0, 12).emi).toBe(100);
+  });
+  it("amortization schedule ends at zero balance", () => {
+    const a = c.amortization(250000, 6.5, 360);
+    expect(a.schedule).toHaveLength(360);
+    expect(a.schedule[359].balance).toBeCloseTo(0, 2);
+    expect(a.payment).toBeCloseTo(1580.17, 1);
+  });
+  it("interest simple vs compound", () => {
+    expect(c.interest(10000, 5, 5, 0).interest).toBeCloseTo(2500);
+    expect(c.interest(10000, 5, 5, 12).total).toBeCloseTo(12833.59, 0);
+  });
+  it("cagr, npv, irr, roi", () => {
+    expect(c.cagr(100000, 180000, 5).cagrPct).toBeCloseTo(12.47, 1);
+    expect(c.npv(10, [-100000, 30000, 40000, 50000, 20000])).toBeCloseTo(11556.59, 1);
+    const irr = c.irr([-100000, 30000, 40000, 50000, 20000]);
+    expect(irr).not.toBeNull();
+    expect(c.npv(irr! * 100, [-100000, 30000, 40000, 50000, 20000])).toBeCloseTo(0, 2);
+    expect(irr! * 100).toBeGreaterThan(10);
+    expect(c.irr([100, 100, 100])).toBeNull();
+    expect(c.roi(50000, 65000, 2).roiPct).toBe(30);
+    expect(c.roi(50000, 65000, 2).annualizedPct).toBeCloseTo(14.02, 1);
+  });
+  it("break-even and depreciation", () => {
+    expect(c.breakEven(50000, 25, 15)!.units).toBe(5000);
+    expect(c.breakEven(1, 10, 10)).toBeNull();
+    const sl = c.straightLine(20000, 2000, 5);
+    expect(sl[4].bookValue).toBeCloseTo(2000);
+    const db = c.decliningBalance(20000, 2000, 5, 2);
+    expect(db[0].depreciation).toBe(8000);
+    expect(db[4].bookValue).toBeCloseTo(2000);
+    expect(db.every((y) => y.depreciation >= 0)).toBe(true);
+  });
+});
+
+describe("amount parsing", () => {
+  it.each([
+    ["$1,234.50", 1234.5],
+    ["(500.00)", -500],
+    ["1.234,50", 1234.5],
+    ["500 CR", 500],
+    ["500 DR", -500],
+    ["-1,000", -1000],
+    ["USD 12", 12],
+    ["12.5-", -12.5],
+    ["1,234", 1234],
+    ["12,50", 12.5],
+    ["", null],
+    ["abc", null],
+  ])("parses %s", (input, expected) => {
+    expect(parseAmount(input)).toBe(expected);
+  });
+  it("respects an explicit decimal style", () => {
+    expect(parseAmount("1,234", "comma")).toBe(1.234);
+    expect(parseAmount("1.234", "comma")).toBe(1234);
+  });
+});
+
+describe("date parsing", () => {
+  const iso = (v: unknown, a: "mdy" | "dmy" = "mdy") => { const d = parseDate(v, a); return d ? formatDate(d, "yyyy-mm-dd") : null; };
+  it("handles common formats", () => {
+    expect(iso("2026-03-01")).toBe("2026-03-01");
+    expect(iso("03/01/2026")).toBe("2026-03-01");
+    expect(iso("03/01/2026", "dmy")).toBe("2026-01-03");
+    expect(iso("13/01/2026")).toBe("2026-01-13"); // unambiguous
+    expect(iso("1 Mar 2026")).toBe("2026-03-01");
+    expect(iso("March 1, 2026")).toBe("2026-03-01");
+    expect(iso("01-Mar-26")).toBe("2026-03-01");
+    expect(iso(46082)).toBe("2026-03-01"); // Excel serial
+    expect(iso("not a date")).toBeNull();
+    expect(iso("02/30/2026")).toBeNull();
+  });
+  it("formats", () => {
+    const d = parseDate("2026-01-31")!;
+    expect(formatDate(d, "mm/dd/yyyy")).toBe("01/31/2026");
+    expect(formatDate(d, "dd/mm/yyyy")).toBe("31/01/2026");
+    expect(formatDate(d, "dd mmm yyyy")).toBe("31 Jan 2026");
+  });
+});

@@ -1,0 +1,28 @@
+# Render Blueprint: deploys OmniFi SuperTools as a free web service.
+# In Render: New + -> Blueprint -> pick this repository -> Apply.
+services:
+  - type: web
+    name: omnifi-supertools
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: AI_PROVIDER
+        value: anthropic
+      - key: AI_MODEL
+        value: claude-sonnet-5
+      # Paste your key in the Render dashboard (Environment tab); never commit it.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # Optional: free PostgreSQL (e.g. Neon) so usage stats and team feedback survive redeploys.
+      - key: DATABASE_URL
+        sync: false

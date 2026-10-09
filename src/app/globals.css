@@ -1,26 +1,206 @@
 @import "tailwindcss";
 
+/* Theme is class-driven (light / dark / system resolved in JS), not media-query driven. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+  OmniFi SuperTools design tokens.
+  Colours come from docs/OMNIFI_BRAND_GUIDE.md. Light mode uses the
+  "report" palette (paper surfaces, navy text). Dark mode uses the
+  "presentation" palette (deep navy surfaces, off-white text).
+*/
 :root {
+  --navy-900: #070b2e;
+  --navy-800: #0a0f3d;
+  --navy-600: #131a6b;
+  --indigo: #4f5bd5;
+  --indigo-hover: #5f6ae0;
+  --lavender: #8b91e3;
+  --green: #00c48c;
+  --paper: #f5f5fa;
+  --body-navy: #2d3580;
+  --muted-indigo: #6b72b8;
+  --warning: #d98e04;
+  --error: #e53935;
+
   --background: #ffffff;
-  --foreground: #171717;
+  --background-soft: var(--paper);
+  --surface: #ffffff;
+  --surface-2: var(--paper);
+  --surface-3: #eceef8;
+  --foreground: var(--navy-800);
+  --foreground-body: var(--body-navy);
+  --foreground-muted: var(--muted-indigo);
+  --border: #e3e5f0;
+  --border-strong: #cfd3ea;
+  --ring: var(--indigo);
+  --accent: var(--indigo);
+  --accent-foreground: #ffffff;
+  --accent-soft: #eef0fb;
+  --success: var(--green);
+  --success-soft: #e6faf3;
+  --warning-soft: #fdf3e1;
+  --error-soft: #fdecec;
+
+  --radius: 14px;
+  --radius-sm: 10px;
+  --radius-motif: 24px;
+  --shadow-sm: 0 1px 2px rgba(10, 15, 61, 0.06), 0 1px 3px rgba(10, 15, 61, 0.04);
+  --shadow-md: 0 6px 20px -8px rgba(10, 15, 61, 0.18), 0 2px 6px rgba(10, 15, 61, 0.05);
+  --shadow-lg: 0 24px 48px -20px rgba(10, 15, 61, 0.28);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root.dark {
+  --background: var(--navy-800);
+  --background-soft: var(--navy-900);
+  --surface: #0f1550;
+  --surface-2: #131a6b;
+  --surface-3: #1a2280;
+  --foreground: var(--paper);
+  --foreground-body: #c9ccf0;
+  --foreground-muted: #9aa0d8;
+  --border: rgba(139, 145, 227, 0.2);
+  --border-strong: rgba(139, 145, 227, 0.36);
+  --accent-soft: rgba(79, 91, 213, 0.18);
+  --success-soft: rgba(0, 196, 140, 0.14);
+  --warning-soft: rgba(217, 142, 4, 0.16);
+  --error-soft: rgba(229, 57, 53, 0.16);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 24px -10px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 24px 48px -20px rgba(0, 0, 0, 0.6);
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-background-soft: var(--background-soft);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-body: var(--foreground-body);
+  --color-muted: var(--foreground-muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--indigo-hover);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-lavender: var(--lavender);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-error: var(--error);
+  --color-error-soft: var(--error-soft);
+  --color-navy-900: var(--navy-900);
+  --color-navy-800: var(--navy-800);
+  --color-navy-600: var(--navy-600);
+  --color-paper: var(--paper);
+  --radius-control: var(--radius);
+  --radius-control-sm: var(--radius-sm);
+  --radius-motif: var(--radius-motif);
+  --shadow-card: var(--shadow-sm);
+  --shadow-card-hover: var(--shadow-md);
+  --shadow-float: var(--shadow-lg);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "JetBrains Mono", Menlo, monospace;
+  --ease-brand: var(--ease);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border);
+}
+
+html {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+
+::selection {
+  background: var(--indigo);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Brand dot: the period after key headlines. */
+.brand-dot {
+  color: var(--indigo);
+}
+
+/* Rounded-square motif, used once per dark hero. */
+.motif {
+  position: absolute;
+  border-radius: var(--radius-motif);
+  border: 1px solid rgba(139, 145, 227, 0.34);
+  pointer-events: none;
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-fade-up {
+  animation: fade-up 0.35s var(--ease) both;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.35) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Rendered markdown preview */
+.prose-omnifi h1, .prose-omnifi h2, .prose-omnifi h3 { font-weight: 600; letter-spacing: -0.02em; margin: 1.2em 0 0.5em; }
+.prose-omnifi h1 { font-size: 1.6rem; } .prose-omnifi h2 { font-size: 1.3rem; } .prose-omnifi h3 { font-size: 1.1rem; }
+.prose-omnifi p, .prose-omnifi ul, .prose-omnifi ol { margin: 0.6em 0; line-height: 1.6; }
+.prose-omnifi ul { list-style: disc; padding-left: 1.4em; } .prose-omnifi ol { list-style: decimal; padding-left: 1.4em; }
+.prose-omnifi code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface-3); padding: 0.1em 0.35em; border-radius: 6px; }
+.prose-omnifi pre { background: var(--surface-3); padding: 1em; border-radius: var(--radius-sm); overflow: auto; }
+.prose-omnifi pre code { background: none; padding: 0; }
+.prose-omnifi a { color: var(--indigo); text-decoration: underline; }
+.prose-omnifi table { border-collapse: collapse; width: 100%; } .prose-omnifi td, .prose-omnifi th { border: 1px solid var(--border); padding: 0.4em 0.6em; }
+.prose-omnifi blockquote { border-left: 3px solid var(--indigo); padding-left: 1em; color: var(--foreground-muted); }

@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OmniFi SuperTools
 
-## Getting Started
+One place for the tools you actually need.
 
-First, run the development server:
+An internal OmniFi platform for converting, editing, analysing and automating files: PDFs, images, video and audio, spreadsheets and Office documents, finance calculators, developer utilities, web checks and AI-assisted text tasks. Most tools run entirely in the browser, so client documents never leave the employee's machine.
+
+## Quick start
 
 ```bash
+npm install
+cp .env.example .env.local     # optional: set ADMIN_PASSWORD to enable /admin
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## What is in the box
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- 162 working tools across 10 categories, driven by one registry (`src/tools`).
+- Batch processing with per-file progress, cancel, retry and download-all.
+- Workflow builder: chain tools such as OCR → Extract tables → CSV to Excel.
+- Command palette (`Ctrl+K`), favorites, recents, light/dark/system theme.
+- Admin dashboard: usage, popular tools, failures, processing time, system health, audit log.
+- Security: session auth with RBAC, CSP and security headers, SSRF guard, rate limits, magic-number file validation.
+- Docker image and compose file (app + PostgreSQL + Redis).
 
-## Learn More
+Tools that need server engines not in this build (LibreOffice, headless Chrome, downloaders) are listed as "Coming soon" and never pretend to run.
 
-To learn more about Next.js, take a look at the following resources:
+## Commands
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run dev         # development server
+npm run build       # production build (standalone output)
+npm start           # run the production build
+npm run typecheck   # tsc
+npm run lint        # eslint
+npm test            # vitest
+npm run check       # all of the above
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Documentation
 
-## Deploy on Vercel
+- [Product plan](docs/PRODUCT_PLAN.md)
+- [Brand guide](docs/OMNIFI_BRAND_GUIDE.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Security](docs/SECURITY.md)
+- [Deployment](docs/DEPLOYMENT.md)
+- [Adding a tool](docs/ADDING_A_TOOL.md)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Stack
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Next.js 16, React 19, TypeScript, Tailwind CSS 4, zustand, cmdk, Fuse.js, pdf-lib, pdf.js, tesseract.js, FFmpeg WebAssembly, SheetJS, JSZip, jose, zod, vitest.
