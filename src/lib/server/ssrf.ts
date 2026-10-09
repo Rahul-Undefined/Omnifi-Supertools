@@ -91,7 +91,7 @@ const BLOCKED_HEADERS = new Set(["host", "cookie", "authorization", "proxy-autho
 export async function safeFetch(input: string, opts: SafeFetchOptions): Promise<{ response: Response; body: string; truncated: boolean; finalUrl: string; timeMs: number }> {
   let url = parseTarget(input);
   const started = Date.now();
-  const headers: Record<string, string> = { "user-agent": "OmniFi-SuperTools/1.0 (+internal)", accept: "*/*" };
+  const headers: Record<string, string> = { "user-agent": "Omnifi-SuperTools/1.0 (+internal)", accept: "*/*" };
   for (const [k, v] of Object.entries(opts.headers ?? {})) {
     if (!BLOCKED_HEADERS.has(k.toLowerCase()) && /^[a-z0-9-]+$/i.test(k)) headers[k] = v.replace(/[\r\n]/g, "");
   }

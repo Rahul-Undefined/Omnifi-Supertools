@@ -24,7 +24,7 @@ export function Footer() {
       </div>
       <div className="border-t border-border">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
-          <span>© {new Date().getFullYear()} OmniFi. Internal use only.</span>
+          <span>© {new Date().getFullYear()} Omnifi. Internal use only.</span>
           <span>Uploaded files for server-side tools are deleted automatically after processing.</span>
         </div>
       </div>

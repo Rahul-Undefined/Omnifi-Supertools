@@ -1,8 +1,8 @@
-# OmniFi SuperTools
+# Omnifi SuperTools
 
 One place for the tools you actually need.
 
-An internal OmniFi platform for converting, editing, analysing and automating files: PDFs, images, video and audio, spreadsheets and Office documents, finance calculators, developer utilities, web checks and AI-assisted text tasks. Most tools run entirely in the browser, so client documents never leave the employee's machine.
+An internal Omnifi platform for converting, editing, analysing and automating files: PDFs, images, video and audio, spreadsheets and Office documents, finance calculators, developer utilities, web checks and AI-assisted text tasks. Most tools run entirely in the browser, so client documents never leave the employee's machine.
 
 ## Quick start
 

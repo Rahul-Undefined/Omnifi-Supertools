@@ -173,7 +173,7 @@ export const metadata: FileProcessor = async (files) => {
 };
 
 export const watermark: FileProcessor = async (files, { options, onProgress, signal }) => {
-  const text = String(options.text ?? "OmniFi");
+  const text = String(options.text ?? "Omnifi");
   const opacity = Number(options.opacity ?? 0.35);
   const sizePct = Number(options.size ?? 6);
   const color = String(options.color ?? "#4F5BD5");

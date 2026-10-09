@@ -64,7 +64,7 @@ export default async function ToolPage({ params, searchParams }: { params: Promi
           <div className="rounded-control border border-border bg-surface p-5">
             <h3 className="text-sm font-semibold text-foreground">About this tool</h3>
             <dl className="mt-3 space-y-2 text-sm">
-              <Row k="Runs" v={tool.runtime === "browser" ? "In your browser" : "On the OmniFi server"} />
+              <Row k="Runs" v={tool.runtime === "browser" ? "In your browser" : "On the Omnifi server"} />
               <Row k="Accepts" v={tool.input.length ? tool.input.map((i) => i.replace("/*", "").replace("image/", "")).join(", ") : tool.kind === "custom" ? "Interactive" : "Text / values"} />
               <Row k="Produces" v={tool.output.length ? tool.output.join(", ") : "On-screen results"} />
               <Row k="Batch" v={tool.multiple ? "Yes" : "Single"} />

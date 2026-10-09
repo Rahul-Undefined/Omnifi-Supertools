@@ -4,7 +4,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
-  OmniFi SuperTools design tokens.
+  Omnifi SuperTools design tokens.
   Colours come from docs/OMNIFI_BRAND_GUIDE.md. Light mode uses the
   "report" palette (paper surfaces, navy text). Dark mode uses the
   "presentation" palette (deep navy surfaces, off-white text).

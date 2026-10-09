@@ -188,7 +188,7 @@ export function ToolRunner({ tool, initialText = "" }: Props) {
       {tool.runtime === "server" ? (
         <p className="flex items-start gap-2.5 rounded-control border border-border bg-surface-2 px-4 py-3 text-sm text-body">
           <Server className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-          <span>{isAi ? "Your text is sent to the configured AI provider through the OmniFi server. Nothing is stored." : tool.processor === "utilities.currency" ? "Only exchange rates come from the server (refreshed hourly from a public feed). Your amounts never leave this page." : "Your input is sent to the OmniFi server for processing. Uploaded files are temporarily processed and automatically deleted afterwards. Nothing is stored."}</span>
+          <span>{isAi ? "Your text is sent to the configured AI provider through the Omnifi server. Nothing is stored." : tool.processor === "utilities.currency" ? "Only exchange rates come from the server (refreshed hourly from a public feed). Your amounts never leave this page." : "Your input is sent to the Omnifi server for processing. Uploaded files are temporarily processed and automatically deleted afterwards. Nothing is stored."}</span>
         </p>
       ) : (
         <p className="flex items-start gap-2.5 rounded-control border border-border bg-surface-2 px-4 py-3 text-sm text-body">

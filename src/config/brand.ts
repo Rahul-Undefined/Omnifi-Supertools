@@ -1,11 +1,11 @@
 /**
- * OmniFi brand tokens.
- * Source of truth: docs/OMNIFI_BRAND_GUIDE.md (derived from the OmniFi brand
+ * Omnifi brand tokens.
+ * Source of truth: docs/OMNIFI_BRAND_GUIDE.md (derived from the Omnifi brand
  * assistant skill, omnifi_theme.json and omnifi-landing.html).
  * Do not invent new brand colours here.
  */
 export const brand = {
-  name: "OmniFi",
+  name: "Omnifi",
   product: "SuperTools",
   tagline: "One place for the tools you actually need.",
   colors: {

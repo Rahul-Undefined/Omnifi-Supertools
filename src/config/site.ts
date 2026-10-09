@@ -1,5 +1,5 @@
 export const site = {
-  name: "OmniFi SuperTools",
+  name: "Omnifi SuperTools",
   shortName: "SuperTools",
   description:
     "Convert, edit, analyze, automate and transform your files without jumping between dozens of websites.",

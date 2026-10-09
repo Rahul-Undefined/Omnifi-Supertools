@@ -1,6 +1,6 @@
 # Security
 
-SuperTools processes internal OmniFi documents. The primary control is architectural: **most tools never send the file anywhere**. This document covers what the server does and how it is protected.
+SuperTools processes internal Omnifi documents. The primary control is architectural: **most tools never send the file anywhere**. This document covers what the server does and how it is protected.
 
 ## Data handling
 

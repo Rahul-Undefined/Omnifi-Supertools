@@ -1,4 +1,4 @@
-# OmniFi SuperTools — production image
+# Omnifi SuperTools — production image
 # Multi-stage: install deps, build, then run the standalone server as a non-root user.
 
 FROM node:24-alpine AS deps

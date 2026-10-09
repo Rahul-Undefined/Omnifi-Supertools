@@ -1,4 +1,4 @@
-# Render Blueprint: deploys OmniFi SuperTools as a free web service.
+# Render Blueprint: deploys Omnifi SuperTools as a free web service.
 # In Render: New + -> Blueprint -> pick this repository -> Apply.
 services:
   - type: web

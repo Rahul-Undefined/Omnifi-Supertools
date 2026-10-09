@@ -256,7 +256,7 @@ export const imageTools: ToolDefinition[] = [
     chainable: true,
     icon: "Stamp",
     options: [
-      { type: "text", key: "text", label: "Text", default: "OmniFi" },
+      { type: "text", key: "text", label: "Text", default: "Omnifi" },
       { type: "range", key: "opacity", label: "Opacity", default: 0.35, min: 0.05, max: 1, step: 0.05 },
       { type: "number", key: "size", label: "Font size (% of width)", default: 6, min: 1, max: 40 },
       { type: "color", key: "color", label: "Colour", default: "#4F5BD5" },

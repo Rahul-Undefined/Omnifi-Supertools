@@ -97,7 +97,7 @@ export const utilityTools: ToolDefinition[] = [
     status: "ready",
     runtime: "browser",
     icon: "Globe2",
-    options: [{ type: "textarea", key: "zones", label: "Zones (blank = OmniFi defaults)", default: "" }],
+    options: [{ type: "textarea", key: "zones", label: "Zones (blank = Omnifi defaults)", default: "" }],
     related: ["timezone-converter"],
   },
   {

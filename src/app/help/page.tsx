@@ -23,7 +23,7 @@ export default function HelpPage() {
       <section className="mt-8 rounded-control border border-border bg-surface p-6 space-y-4 text-sm text-body">
         <h2 className="text-lg font-semibold text-foreground">Where your files go<span className="brand-dot">.</span></h2>
         <p><strong className="text-foreground">Browser tools</strong> (the large majority) do all the work on your computer. Nothing is uploaded. Close the tab and it is gone.</p>
-        <p><strong className="text-foreground">Server tools</strong> are marked with a “Server” badge. Input is sent to the OmniFi server, processed in a temporary location, and deleted as soon as the result is returned. Only the tool name, timing and success/failure are recorded for usage statistics, never file contents or names.</p>
+        <p><strong className="text-foreground">Server tools</strong> are marked with a “Server” badge. Input is sent to the Omnifi server, processed in a temporary location, and deleted as soon as the result is returned. Only the tool name, timing and success/failure are recorded for usage statistics, never file contents or names.</p>
         <p><strong className="text-foreground">AI tools</strong> send your text to the AI provider configured by an administrator. Check the AI page to see which provider is active.</p>
         <p><strong className="text-foreground">Coming soon</strong> tools are listed so you know what is planned. They never pretend to run.</p>
       </section>

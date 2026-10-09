@@ -1,13 +1,13 @@
-# OmniFi brand guide (as applied in SuperTools)
+# Omnifi brand guide (as applied in SuperTools)
 
-This document records the branding system discovered in existing OmniFi materials and how SuperTools applies it. Nothing here was invented; every value traces to an existing OmniFi asset.
+This document records the branding system discovered in existing Omnifi materials and how SuperTools applies it. Nothing here was invented; every value traces to an existing Omnifi asset.
 
 ## Sources found
 
 | Asset | Location | Used for |
 |---|---|---|
 | Official logo (SVG) | `Downloads/Omnifi_Internal/Omnifi/omnifi-logo-main.svg` | Copied unmodified to `public/branding/omnifi-logo.svg` |
-| OmniFi brand assistant skill | Claude skill `omnifi-brand-assistant` | Colour system, typography rules, voice, visual rules |
+| Omnifi brand assistant skill | Claude skill `omnifi-brand-assistant` | Colour system, typography rules, voice, visual rules |
 | Older brand skill package | `Downloads/Omnifi_Internal/General_Company_Admin/omnifi-brand.skill` | Logo anatomy, earlier palette (superseded, see notes) |
 | Power BI theme | `Downloads/PowerBi/Docs/source/omnifi_theme.json` | Surface/border/table colours, functional colours |
 | Landing page | `Downloads/Omnifi_Internal/Omnifi/omnifi-landing.html` | Radius, motion, font choice (Geist), dark-surface treatment |
@@ -45,7 +45,7 @@ The older `omnifi-brand.skill` package lists a wider palette (pink `#F91149`, ye
 
 ## Typography
 
-- Family: Geist (as used by the OmniFi landing page), with JetBrains Mono / Geist Mono for numerals and code. System fallback: Segoe UI.
+- Family: Geist (as used by the Omnifi landing page), with JetBrains Mono / Geist Mono for numerals and code. System fallback: Segoe UI.
 - Headlines: semibold (600), tight letter-spacing, sentence case.
 - Body: regular (400). Never ALL CAPS body text.
 - Brand dot: key headlines end with a period in Indigo Bright (`.brand-dot`).

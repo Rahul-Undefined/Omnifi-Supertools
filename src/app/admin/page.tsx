@@ -21,7 +21,7 @@ export default async function AdminPage() {
   }
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-10">
-      <PageHeader title="OmniFi SuperTools Admin" description="Usage, health, team feedback and configuration. No file contents are ever recorded." icon="ShieldCheck" />
+      <PageHeader title="Omnifi SuperTools Admin" description="Usage, health, team feedback and configuration. No file contents are ever recorded." icon="ShieldCheck" />
       {open && <p className="mb-6 rounded-control border border-border bg-surface-2 px-4 py-3 text-sm text-body">Open mode: no accounts are configured, so this page is visible to everyone on the network. Set ADMIN_PASSWORD on the server to restrict it.</p>}
       <AdminDashboard />
     </div>

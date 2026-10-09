@@ -1,6 +1,6 @@
 # Architecture
 
-OmniFi SuperTools is a Next.js 16 (App Router) application. The defining design choice is that **tools run in the browser by default**. The server exists for the shell, authentication, usage statistics, AI proxying and a small set of network utilities.
+Omnifi SuperTools is a Next.js 16 (App Router) application. The defining design choice is that **tools run in the browser by default**. The server exists for the shell, authentication, usage statistics, AI proxying and a small set of network utilities.
 
 ## Layout
 

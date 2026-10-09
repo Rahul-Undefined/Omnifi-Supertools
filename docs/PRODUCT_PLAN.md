@@ -1,17 +1,17 @@
 # Product plan
 
-**OmniFi SuperTools.** One place for the tools you actually need.
+**Omnifi SuperTools.** One place for the tools you actually need.
 
 ## Why
 
-OmniFi staff process client PDFs, statements, spreadsheets, images and recordings every day, and reach for a dozen public websites to do it. Those sites upload client documents to third parties. SuperTools replaces them with an internal platform that does the work in the employee's browser wherever possible and looks like something OmniFi shipped.
+Omnifi staff process client PDFs, statements, spreadsheets, images and recordings every day, and reach for a dozen public websites to do it. Those sites upload client documents to third parties. SuperTools replaces them with an internal platform that does the work in the employee's browser wherever possible and looks like something Omnifi shipped.
 
 ## Principles
 
 1. Privacy first: browser-side by default; server-side only when unavoidable, with automatic deletion.
 2. No fake features: a tool is either ready or clearly marked coming soon.
 3. Registry-driven: adding a tool never requires UI work.
-4. OmniFi branded: official logo, navy/indigo system, brand dot, restrained motion.
+4. Omnifi branded: official logo, navy/indigo system, brand dot, restrained motion.
 5. Fast for power users: command palette, shortcuts, batch, workflows.
 
 ## Reference study (not copied)

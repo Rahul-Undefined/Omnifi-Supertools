@@ -77,11 +77,11 @@ describe("pdf processors", () => {
     const f = await makePdf(1);
     const read = await metadata([f], ctx());
     expect((read.data as { title: string }).title).toBe("Original title");
-    const written = await metadata([f], ctx({ edit: true, title: "New", author: "OmniFi", keywords: "a, b" }));
+    const written = await metadata([f], ctx({ edit: true, title: "New", author: "Omnifi", keywords: "a, b" }));
     expect(written.files).toHaveLength(1);
     const again = await metadata([new File([written.files[0].blob], "x.pdf", { type: "application/pdf" })], ctx());
     expect((again.data as { title: string; author: string }).title).toBe("New");
-    expect((again.data as { author: string }).author).toBe("OmniFi");
+    expect((again.data as { author: string }).author).toBe("Omnifi");
   });
   it("lossless compress never returns a larger file", async () => {
     const f = await makePdf(3);
