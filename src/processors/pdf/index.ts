@@ -319,15 +319,37 @@ export const watermark: FileProcessor = async (files, { options, onProgress }) =
   const opacity = Number(options.opacity ?? 0.2);
   const size = Number(options.size ?? 60);
   const angle = Number(options.angle ?? 45);
+  const margin = Number(options.margin ?? 36);
+  const position = String(options.position ?? "center");
   const color = hexToRgb(String(options.color ?? "#4F5BD5"));
   const outputs: ProcessorFile[] = [];
   for (let i = 0; i < files.length; i++) {
     const doc = await load(files[i]);
     const font = await doc.embedFont(StandardFonts.HelveticaBold);
     const tw = font.widthOfTextAtSize(text, size);
+    const th = font.heightAtSize(size);
+    const rad = (angle * Math.PI) / 180;
+    // Bounding box of the rotated text, so edge positions stay inside the page.
+    const bw = Math.abs(tw * Math.cos(rad)) + Math.abs(th * Math.sin(rad));
+    const bh = Math.abs(tw * Math.sin(rad)) + Math.abs(th * Math.cos(rad));
     for (const page of doc.getPages()) {
       const { width, height } = page.getSize();
-      page.drawText(text, { x: width / 2 - tw / 2, y: height / 2, size, font, color, opacity, rotate: degrees(angle) });
+      const place = (cx: number, cy: number) => {
+        // pdf-lib rotates around the text origin (baseline start); offset so the text is centred on (cx, cy).
+        const x = cx - (tw / 2) * Math.cos(rad) + (th / 2) * Math.sin(rad);
+        const y = cy - (tw / 2) * Math.sin(rad) - (th / 2) * Math.cos(rad);
+        page.drawText(text, { x, y, size, font, color, opacity, rotate: degrees(angle) });
+      };
+      if (position === "tile") {
+        const stepX = bw + size * 1.5;
+        const stepY = bh + size * 1.5;
+        for (let y = bh / 2; y < height + bh; y += stepY) for (let x = bw / 2; x < width + bw; x += stepX) place(x, y);
+        continue;
+      }
+      const [v, h] = position === "center" ? ["center", "center"] : position.split("-");
+      const cx = h === "left" ? margin + bw / 2 : h === "right" ? width - margin - bw / 2 : width / 2;
+      const cy = v === "top" ? height - margin - bh / 2 : v === "bottom" ? margin + bh / 2 : height / 2;
+      place(cx, cy);
     }
     outputs.push(await save(doc, withSuffix(files[i].name, "-watermarked")));
     onProgress?.((i + 1) / files.length);

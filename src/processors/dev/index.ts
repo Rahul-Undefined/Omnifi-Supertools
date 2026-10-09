@@ -5,6 +5,7 @@ import { allHashes } from "../shared/hash";
 import { formatSql } from "./sql";
 import { describeCron, nextCronRuns } from "./cron";
 import { parseColor, colorFormats } from "./color";
+import { encodeText, decodeText, type BaseKind } from "./basen";
 
 const indentOf = (v: unknown) => (String(v ?? "2") === "tab" ? "\t" : " ".repeat(Number(v ?? 2)));
 
@@ -144,6 +145,15 @@ const b64decode = (s: string) => {
 
 export const base64: TextProcessor = async (input, { options }) =>
   textOutput(String(options.mode ?? "encode") === "decode" ? b64decode(input) : b64encode(input, Boolean(options.urlSafe)));
+
+export const baseN: TextProcessor = async (input, { options }) => {
+  if (!input.trim()) throw new ProcessorError("Enter some text first");
+  const kind = String(options.kind ?? "base32") as BaseKind;
+  const decode = String(options.mode ?? "encode") === "decode";
+  const out = decode ? decodeText(kind, input) : encodeText(kind, input);
+  const label = { base32: "Base32", base58: "Base58", base45: "Base45", base16: "Base16 (hex)" }[kind];
+  return textOutput(out, undefined, { Encoding: label, Input: `${input.length} chars`, Output: `${out.length} chars` });
+};
 
 export const hash: TextProcessor = async (input) => {
   const h = await allHashes(new TextEncoder().encode(input));

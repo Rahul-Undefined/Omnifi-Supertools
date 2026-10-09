@@ -18,6 +18,7 @@ const families: Record<string, Loader> = {
   file: () => import("./file"),
   web: () => import("./web"),
   utilities: () => import("./utilities"),
+  custom: () => import("./custom"),
   ai: () => import("./ai"),
 };
 

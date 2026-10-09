@@ -28,7 +28,7 @@ describe("tool registry", () => {
   it("file tools declare inputs; text/calculator tools do not require them", () => {
     for (const t of tools) {
       if (t.kind === "file") expect(t.input.length, `${t.id} input`).toBeGreaterThan(0);
-      expect(t.output.length, `${t.id} output`).toBeGreaterThan(0);
+      if (t.kind !== "custom") expect(t.output.length, `${t.id} output`).toBeGreaterThan(0);
       expect(t.keywords.length, `${t.id} keywords`).toBeGreaterThan(0);
       expect(t.description.length).toBeGreaterThan(10);
     }

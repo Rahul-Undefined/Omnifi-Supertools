@@ -7,7 +7,7 @@ describe("search", () => {
   it("finds tools by name", () => {
     expect(top("compress pdf")[0]).toBe("compress-pdf");
     expect(top("json formatter")[0]).toBe("json-formatter");
-    expect(top("gst")[0]).toBe("gst-calculator");
+    expect(top("sales tax")[0]).toBe("sales-tax-calculator");
   });
 
   it("handles the homepage examples", () => {

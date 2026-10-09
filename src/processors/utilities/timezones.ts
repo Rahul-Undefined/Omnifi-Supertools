@@ -57,10 +57,9 @@ export const ZONE_ALIASES: Record<string, string> = {
   PHT: "Asia/Manila",
 };
 
-export const ZONE_PRESETS = ["Asia/Kolkata", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "Europe/London", "Europe/Paris", "Asia/Dubai", "Asia/Singapore", "Australia/Sydney"];
+export const ZONE_PRESETS = ["America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "Europe/London", "Europe/Paris", "Asia/Dubai", "Asia/Singapore", "Australia/Sydney"];
 
 export const ZONE_OPTIONS = [
-  ["Asia/Kolkata", "India (IST)"],
   ["America/New_York", "US Eastern (ET)"],
   ["America/Chicago", "US Central (CT)"],
   ["America/Denver", "US Mountain (MT)"],
@@ -84,7 +83,8 @@ export const ZONE_OPTIONS = [
   ["Africa/Johannesburg", "Johannesburg"],
   ["Africa/Lagos", "Lagos"],
   ["Africa/Nairobi", "Nairobi"],
-  ["Asia/Dubai", "Dubai (GST)"],
+  ["Asia/Dubai", "Dubai"],
+  ["Asia/Kolkata", "India (IST)"],
   ["Asia/Riyadh", "Riyadh"],
   ["Asia/Karachi", "Karachi"],
   ["Asia/Dhaka", "Dhaka"],

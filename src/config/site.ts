@@ -12,6 +12,7 @@ export const site = {
     "Convert MP4 to MP3",
     "Compare two Excel files",
     "Generate a QR code",
+    "Convert 2 PM IST to EST",
   ],
   nav: [
     { href: "/", label: "Home" },

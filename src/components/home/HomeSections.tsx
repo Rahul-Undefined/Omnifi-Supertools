@@ -8,7 +8,7 @@ import { ToolIcon } from "@/components/tools/ToolIcon";
 import { Card } from "@/components/ui/Card";
 
 /** Sensible defaults until a user has their own usage history. */
-const DEFAULT_POPULAR = ["merge-pdf", "compress-pdf", "pdf-to-jpg", "jpg-to-pdf", "compress-image", "csv-to-excel", "json-formatter", "qr-generator"];
+const DEFAULT_POPULAR = ["merge-pdf", "compress-pdf", "pdf-to-jpg", "jpg-to-pdf", "compress-image", "csv-to-excel", "timezone-converter", "typing-test"];
 
 export function PopularTools() {
   const usage = usePrefs((s) => s.usage);

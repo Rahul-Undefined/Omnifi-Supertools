@@ -118,3 +118,18 @@ describe("text tools", () => {
     expect(out).toContain("- one");
   });
 });
+
+describe("base-N codecs", async () => {
+  const { encodeText, decodeText } = await import("@/processors/dev/basen");
+  it("round-trips Base32, Base58, Base45 and hex", () => {
+    expect(encodeText("base32", "foobar")).toBe("MZXW6YTBOI======");
+    expect(decodeText("base32", "MZXW6YTBOI======")).toBe("foobar");
+    expect(encodeText("base58", "Hello World")).toBe("JxF12TrwUP45BMd");
+    expect(decodeText("base58", "JxF12TrwUP45BMd")).toBe("Hello World");
+    expect(encodeText("base45", "Hello!!")).toBe("%69 VD92EX0");
+    expect(decodeText("base45", "%69 VD92EX0")).toBe("Hello!!");
+    expect(encodeText("base16", "AB")).toBe("4142");
+    for (const k of ["base32", "base58", "base45", "base16"] as const) expect(decodeText(k, encodeText(k, "Omnifi ✓ 2026"))).toBe("Omnifi ✓ 2026");
+    expect(() => decodeText("base58", "0OIl")).toThrow(/Base58/);
+  });
+});

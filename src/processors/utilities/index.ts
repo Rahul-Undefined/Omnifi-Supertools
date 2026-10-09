@@ -7,7 +7,7 @@ import { resolveZone, convertBetweenZones, parseLocalDateTime, ZONE_PRESETS } fr
 /* ---------------- Time zone converter ---------------- */
 
 export const timezone: CalcProcessor = async ({ options }) => {
-  const fromZone = resolveZone(String(options.fromCustom || options.from || "Asia/Kolkata"));
+  const fromZone = resolveZone(String(options.fromCustom || options.from || "America/New_York"));
   const raw = String(options.datetime ?? "").trim();
   const targets = String(options.to ?? "")
     .split(/[\n,;]+/)

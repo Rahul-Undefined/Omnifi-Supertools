@@ -18,12 +18,6 @@ const table = (header: string[], rows: (string | number)[][]) => ({ header, rows
 
 /* ---------- Calculators ---------- */
 
-export const gst: CalcProcessor = async ({ options }) => {
-  const r = calc.gst(n(options.amount), n(options.rate), String(options.mode) === "inclusive");
-  const rows: [string, string][] = [["Net amount", money(r.net)], ["GST", money(r.tax)], ["Gross amount", money(r.gross)]];
-  return textOutput(lines(rows), r, stats(rows));
-};
-
 export const percentage: CalcProcessor = async ({ options }) => {
   const x = n(options.x); const y = n(options.y); const mode = String(options.mode ?? "of");
   const r = calc.percentage(mode, x, y);
@@ -46,12 +40,6 @@ export const markup: CalcProcessor = async ({ options }) => {
 export const discount: CalcProcessor = async ({ options }) => {
   const r = calc.discount(n(options.price), n(options.discount));
   const rows: [string, string][] = [["Final price", money(r.final)], ["You save", money(r.saved)]];
-  return textOutput(lines(rows), r, stats(rows));
-};
-
-export const emi: CalcProcessor = async ({ options }) => {
-  const r = calc.emi(n(options.principal), n(options.rate), n(options.months, 1));
-  const rows: [string, string][] = [["Monthly EMI", money(r.emi)], ["Total interest", money(r.totalInterest)], ["Total payment", money(r.totalPayment)]];
   return textOutput(lines(rows), r, stats(rows));
 };
 
@@ -337,3 +325,5 @@ export const statementPdfToExcel: FileProcessor = async (files, { options, onPro
   if (!total) throw new ProcessorError("No transaction lines detected", "The statement may be scanned (run OCR first) or laid out in an unusual way.");
   return { files: outputs, stats: { Transactions: String(total) }, warnings: ["Extraction is heuristic. Reconcile totals before use."] };
 };
+
+export { salesTax, loanPayment, mileage, paymentTerms, prorate, businessDays, allocate, arAging, bankReconciliation } from "./us";

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { tools, getTool, relatedTools } from "@/tools/registry";
 import { categoryById } from "@/tools/categories";
 import { ToolRunner } from "@/components/tools/ToolRunner";
+import { CustomTool } from "@/components/custom";
 import { ToolGrid } from "@/components/tools/ToolGrid";
 import { FavoriteButton } from "@/components/tools/FavoriteButton";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -46,7 +47,9 @@ export default async function ToolPage({ params, searchParams }: { params: Promi
       />
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div>
-          {tool.status === "ready" ? (
+          {tool.status === "ready" && tool.kind === "custom" ? (
+            <CustomTool processor={tool.processor} />
+          ) : tool.status === "ready" ? (
             <ToolRunner tool={tool} initialText={q ?? ""} />
           ) : (
             <div className="rounded-control border border-warning/40 bg-warning-soft p-8 text-center">
@@ -62,8 +65,8 @@ export default async function ToolPage({ params, searchParams }: { params: Promi
             <h3 className="text-sm font-semibold text-foreground">About this tool</h3>
             <dl className="mt-3 space-y-2 text-sm">
               <Row k="Runs" v={tool.runtime === "browser" ? "In your browser" : "On the OmniFi server"} />
-              <Row k="Accepts" v={tool.input.length ? tool.input.map((i) => i.replace("/*", "").replace("image/", "")).join(", ") : "Text / values"} />
-              <Row k="Produces" v={tool.output.join(", ")} />
+              <Row k="Accepts" v={tool.input.length ? tool.input.map((i) => i.replace("/*", "").replace("image/", "")).join(", ") : tool.kind === "custom" ? "Interactive" : "Text / values"} />
+              <Row k="Produces" v={tool.output.length ? tool.output.join(", ") : "On-screen results"} />
               <Row k="Batch" v={tool.multiple ? "Yes" : "Single"} />
             </dl>
           </div>

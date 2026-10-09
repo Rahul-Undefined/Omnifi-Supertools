@@ -37,6 +37,13 @@ export const developerTools: ToolDefinition[] = [
   text("url-encoder", "URL encoder", "Percent-encode text for use in URLs.", ["url", "encode", "percent", "escape"], "dev.urlEncode", "Link", { options: [{ type: "checkbox", key: "component", label: "Encode as component (also encodes / ? & =)", default: true }] }),
   text("url-decoder", "URL decoder", "Decode percent-encoded text.", ["url", "decode", "unescape"], "dev.urlDecode", "Link2"),
   text("base64", "Base64", "Encode text to Base64 or decode it back. Handles UTF-8.", ["base64", "encode", "decode"], "dev.base64", "Binary", { options: [{ type: "select", key: "mode", label: "Mode", default: "encode", options: [{ value: "encode", label: "Encode" }, { value: "decode", label: "Decode" }] }, { type: "checkbox", key: "urlSafe", label: "URL-safe alphabet", default: false }] }),
+  text("base32-base58", "Base32 / Base58 / Base45 / Hex", "Encode text with the smaller base alphabets (Base32, Base58 as used in crypto addresses, Base45, Base16) or decode them back.", ["base32", "base58", "base45", "base16", "hex", "encode", "decode", "base48", "base36"], "dev.baseN", "Binary", {
+    options: [
+      { type: "select", key: "kind", label: "Encoding", default: "base32", options: [{ value: "base32", label: "Base32 (RFC 4648)" }, { value: "base58", label: "Base58 (Bitcoin alphabet)" }, { value: "base45", label: "Base45 (QR / EU health cert)" }, { value: "base16", label: "Base16 (hex)" }] },
+      { type: "select", key: "mode", label: "Mode", default: "encode", options: [{ value: "encode", label: "Encode" }, { value: "decode", label: "Decode" }] },
+    ],
+    related: ["base64", "hash-generator"],
+  }),
   text("hash-generator", "Hash generator", "MD5, SHA-1, SHA-256 and SHA-512 of text.", ["hash", "md5", "sha", "sha256", "checksum", "digest"], "dev.hash", "Fingerprint"),
   text("jwt-decoder", "JWT decoder", "Decode header and payload of a JSON Web Token. Signature is not verified.", ["jwt", "token", "decode", "claims"], "dev.jwtDecode", "KeyRound", { inputPlaceholder: "eyJhbGciOi..." }),
   {

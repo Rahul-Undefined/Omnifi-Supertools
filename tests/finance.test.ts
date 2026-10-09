@@ -1,14 +1,28 @@
 import { describe, it, expect } from "vitest";
 import * as c from "@/processors/finance/calculators";
+import { salesTax, loanPayment, mileage, paymentTerms, prorate, businessDays, allocate } from "@/processors/finance/us";
 import { parseAmount } from "@/processors/shared/amounts";
 import { parseDate, formatDate } from "@/processors/shared/dates";
 
 describe("finance calculators", () => {
-  it("gst exclusive and inclusive", () => {
-    expect(c.gst(1000, 18, false)).toEqual({ net: 1000, tax: 180, gross: 1180 });
-    const inc = c.gst(1180, 18, true);
-    expect(inc.net).toBeCloseTo(1000);
-    expect(inc.tax).toBeCloseTo(180);
+  it("sales tax exclusive and inclusive", async () => {
+    const ex = await salesTax({ options: { amount: 1000, rate: 8.25, mode: "exclusive" } });
+    expect((ex.data as { total: number }).total).toBeCloseTo(1082.5);
+    const inc = await salesTax({ options: { amount: 1082.5, rate: 8.25, mode: "inclusive" } });
+    expect((inc.data as { net: number }).net).toBeCloseTo(1000);
+  });
+  it("loan payment, mileage, terms, proration, business days, allocation", async () => {
+    expect((await loanPayment({ options: { principal: 350000, rate: 6.5, years: 30 } })).data).toMatchObject({ payment: expect.closeTo(2212.24, 0) });
+    expect((await mileage({ options: { miles: 100, rate: 0.7 } })).data).toMatchObject({ total: 70 });
+    const terms = await paymentTerms({ options: { amount: 10000, invoiceDate: "03/01/2026", discount: 2, discountDays: 10, netDays: 30 } });
+    expect((terms.data as { annualized: number }).annualized).toBeCloseTo(37.24, 0);
+    expect(terms.stats?.["Pay by (discount)"]).toContain("03/11/2026");
+    expect((await prorate({ options: { amount: 3000, start: "03/16/2026", end: "03/31/2026" } })).data).toMatchObject({ prorated: expect.closeTo(1548.39, 1) });
+    expect((await businessDays({ options: { start: "03/02/2026", end: "03/13/2026" } })).data).toMatchObject({ count: 10 });
+    expect((await businessDays({ options: { start: "03/06/2026", add: 1 } })).stats?.["+1 business days"]).toBe("03/09/2026");
+    const alloc = await allocate({ options: { amount: 100, splits: "A = 1\nB = 1\nC = 1" } });
+    const amounts = (alloc.data as { rows: string[][] }).rows.map((r) => Number(r[2]));
+    expect(amounts.reduce((a, b) => a + b, 0)).toBeCloseTo(100, 2);
   });
   it("percentage modes", () => {
     expect(c.percentage("of", 15, 200).value).toBe(30);
@@ -21,8 +35,7 @@ describe("finance calculators", () => {
     expect(c.markup(60, 40).price).toBeCloseTo(84);
     expect(c.discount(100, 15)).toEqual({ final: 85, saved: 15 });
   });
-  it("emi matches a known amortising loan", () => {
-    // 500,000 at 9% for 60 months ≈ 10,379 per month
+  it("monthly payment matches a known amortising loan", () => {
     expect(c.emi(500000, 9, 60).emi).toBeCloseTo(10379, 0);
     expect(c.emi(1200, 0, 12).emi).toBe(100);
   });

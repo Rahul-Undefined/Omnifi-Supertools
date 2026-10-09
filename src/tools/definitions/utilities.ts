@@ -3,9 +3,23 @@ import { ZONE_OPTIONS } from "@/processors/utilities/timezones";
 
 const zoneSelect = ZONE_OPTIONS.map(([value, label]) => ({ value, label }));
 
-const CURRENCIES = ["USD", "INR", "EUR", "GBP", "AED", "CAD", "AUD", "SGD", "JPY", "CNY", "HKD", "CHF", "SAR", "QAR", "KWD", "MYR", "THB", "PHP", "IDR", "VND", "KRW", "NZD", "ZAR", "NGN", "KES", "EGP", "TRY", "BRL", "MXN", "ARS", "CLP", "COP", "PLN", "SEK", "NOK", "DKK", "CZK", "HUF", "ILS", "PKR", "BDT", "LKR", "NPR"];
+const CURRENCIES = ["USD", "EUR", "GBP", "CAD", "MXN", "AUD", "INR", "AED", "SGD", "JPY", "CNY", "HKD", "CHF", "SAR", "QAR", "KWD", "MYR", "THB", "PHP", "IDR", "VND", "KRW", "NZD", "ZAR", "NGN", "KES", "EGP", "TRY", "BRL", "MXN", "ARS", "CLP", "COP", "PLN", "SEK", "NOK", "DKK", "CZK", "HUF", "ILS", "PKR", "BDT", "LKR", "NPR"];
 
 export const utilityTools: ToolDefinition[] = [
+  {
+    id: "typing-test",
+    name: "Typing test",
+    category: "utilities",
+    description: "Measure your typing speed and accuracy with timed or fixed-length tests. Tracks your best scores.",
+    keywords: ["typing", "typing test", "wpm", "words per minute", "keyboard", "speed test", "accuracy"],
+    input: [],
+    output: [],
+    processor: "custom.typing",
+    kind: "custom",
+    status: "ready",
+    runtime: "browser",
+    icon: "Keyboard",
+  },
   {
     id: "timezone-converter",
     name: "Time zone converter",
@@ -21,9 +35,9 @@ export const utilityTools: ToolDefinition[] = [
     icon: "Clock",
     options: [
       { type: "text", key: "datetime", label: "Date and time (blank = now)", default: "", placeholder: "2026-03-01 14:30, 03/01/2026 2:30 PM, or 14:30" },
-      { type: "select", key: "from", label: "From zone", default: "Asia/Kolkata", options: zoneSelect },
+      { type: "select", key: "from", label: "From zone", default: "America/New_York", options: zoneSelect },
       { type: "text", key: "fromCustom", label: "Or type a zone / abbreviation", default: "", placeholder: "IST, EST, Europe/Berlin…" },
-      { type: "textarea", key: "to", label: "To zones (comma separated; abbreviations work)", default: "EST, CST, PST, GMT, CET, Asia/Dubai, Asia/Singapore, Australia/Sydney" },
+      { type: "textarea", key: "to", label: "To zones (comma separated; abbreviations work)", default: "CST, MST, PST, London, CET, IST, Asia/Singapore, Australia/Sydney" },
     ],
     related: ["world-clock", "timestamp-converter"],
   },
@@ -60,8 +74,8 @@ export const utilityTools: ToolDefinition[] = [
       { type: "number", key: "amount", label: "Amount", default: 1000, min: 0, step: 0.01 },
       { type: "select", key: "from", label: "From", default: "USD", options: CURRENCIES.map((c) => ({ value: c, label: c })) },
       { type: "text", key: "fromCustom", label: "Or type a currency code", default: "", placeholder: "e.g. OMR" },
-      { type: "text", key: "to", label: "To (comma separated)", default: "INR, EUR, GBP, AED, CAD" },
+      { type: "text", key: "to", label: "To (comma separated)", default: "EUR, GBP, CAD, MXN, INR" },
     ],
-    related: ["gst-calculator", "percentage-calculator"],
+    related: ["sales-tax-calculator", "percentage-calculator"],
   },
 ];

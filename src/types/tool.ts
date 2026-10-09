@@ -15,7 +15,8 @@ export type ToolKind =
   | "file" // upload files -> options -> run -> download
   | "text" // text in -> text out
   | "calculator" // form in -> computed result
-  | "generator"; // options -> generated output (e.g. QR, UUID)
+  | "generator" // options -> generated output (e.g. QR, UUID)
+  | "custom"; // fully interactive page rendered by a registered component
 
 export type ToolStatus = "ready" | "coming-soon";
 

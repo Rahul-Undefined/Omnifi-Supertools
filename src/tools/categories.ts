@@ -10,7 +10,7 @@ export const categories: ToolCategory[] = [
   { id: "web", name: "Web", description: "URLs, headers, DNS and page inspection.", icon: "Globe" },
   { id: "files", name: "Files", description: "Archives, hashes, metadata and encoding.", icon: "FolderArchive" },
   { id: "text", name: "Text", description: "Count, clean, sort, compare and convert text.", icon: "Type" },
-  { id: "utilities", name: "Everyday", description: "Time zones, world clock and live currency conversion.", icon: "Globe2" },
+  { id: "utilities", name: "Everyday", description: "Time zones, currency conversion, typing test.", icon: "Globe2" },
   { id: "ai", name: "AI", description: "Summarize, extract, translate and rewrite with a configured AI provider.", icon: "Sparkles" },
 ];
 
