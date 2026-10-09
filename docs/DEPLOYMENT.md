@@ -78,7 +78,11 @@ Put the app behind Azure AD Application Proxy, oauth2-proxy or similar, set `AUT
 
 Terminate TLS at the proxy. The app sets HSTS in production.
 
-## Self-hosting the WebAssembly engines (recommended on the intranet)
+## WebAssembly engines are self-hosted
+
+FFmpeg core (`public/ffmpeg`), the OCR worker and core (`public/tesseract`) and OCR language data (`public/tessdata`: eng, spa, fra, deu, hin) ship inside the app and the Docker image. No CDN is contacted at runtime and the CSP `connect-src` is `self` only. To add an OCR language, download `<lang>.traineddata.gz` from tessdata.projectnaptha.com/4.0.0 into `public/tessdata` and add it to the OCR tool's language list.
+
+## Self-hosting the WebAssembly engines (legacy notes)
 
 FFmpeg core:
 

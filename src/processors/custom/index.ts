@@ -11,3 +11,6 @@ const interactive = (name: string): CalcProcessor => async () => {
 };
 
 export const typing = interactive("Typing test");
+export const organize = interactive("Page organiser");
+export const redact = interactive("Redact PDF");
+export const fillForm = interactive("Fill PDF form");

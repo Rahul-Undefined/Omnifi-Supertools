@@ -23,6 +23,9 @@ services:
       # Paste your key in the Render dashboard (Environment tab); never commit it.
       - key: ANTHROPIC_API_KEY
         sync: false
+      # Admin password for /admin (set in the Render dashboard; the admin page is open to everyone until it is set).
+      - key: ADMIN_PASSWORD
+        sync: false
       # Optional: free PostgreSQL (e.g. Neon) so usage stats and team feedback survive redeploys.
       - key: DATABASE_URL
         sync: false

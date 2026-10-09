@@ -61,6 +61,30 @@ export const financeTools: ToolDefinition[] = [
 
   // Accounting data tools (CSV / XLSX in, XLSX out). Browser-side.
   {
+    id: "statement-splitter",
+    name: "Statement splitter",
+    category: "finance",
+    description: "Split one bank or card export into one sheet per month, quarter, year or account.",
+    keywords: ["split statement", "by month", "per month", "by account", "separate", "bank export", "card export"],
+    input: csvIn,
+    output: ["xlsx"],
+    processor: "finance.statementSplit",
+    kind: "file",
+    status: "ready",
+    runtime: "browser",
+    multiple: true,
+    chainable: true,
+    icon: "SplitSquareVertical",
+    options: [
+      { type: "select", key: "by", label: "Split by", default: "month", options: [{ value: "month", label: "Month" }, { value: "quarter", label: "Quarter" }, { value: "year", label: "Year" }, { value: "column", label: "A column's value (e.g. Account)" }] },
+      { type: "text", key: "dateColumn", label: "Date column", default: "Date" },
+      { type: "text", key: "groupColumn", label: "Column to split by (for column mode)", default: "Account" },
+      { type: "select", key: "assume", label: "Ambiguous dates are", default: "mdy", options: [{ value: "mdy", label: "Month/Day/Year" }, { value: "dmy", label: "Day/Month/Year" }] },
+      { type: "checkbox", key: "totals", label: "Add a totals row to each sheet", default: true },
+    ],
+    related: ["transaction-cleaner", "split-pdf-smart"],
+  },
+  {
     id: "ar-aging",
     name: "AR aging report",
     category: "finance",

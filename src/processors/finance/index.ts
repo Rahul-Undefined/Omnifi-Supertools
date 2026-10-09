@@ -326,4 +326,5 @@ export const statementPdfToExcel: FileProcessor = async (files, { options, onPro
   return { files: outputs, stats: { Transactions: String(total) }, warnings: ["Extraction is heuristic. Reconcile totals before use."] };
 };
 
+export { statementSplit } from "./statement";
 export { salesTax, loanPayment, mileage, paymentTerms, prorate, businessDays, allocate, arAging, bankReconciliation } from "./us";

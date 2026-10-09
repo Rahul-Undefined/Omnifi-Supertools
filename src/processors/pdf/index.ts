@@ -281,7 +281,11 @@ export const ocr: FileProcessor = async (files, { options, onProgress, signal })
   const lang = String(options.lang ?? "eng");
   const scale = Number(options.scale ?? 2);
   onProgress?.(0.01, "Loading OCR engine");
+  // Worker, WebAssembly core and language data are all served by this app (public/tesseract, public/tessdata).
   const worker = await createWorker(lang, 1, {
+    workerPath: "/tesseract/worker.min.js",
+    corePath: "/tesseract",
+    langPath: "/tessdata",
     logger: (m) => {
       if (m.status === "recognizing text" && typeof m.progress === "number") onProgress?.(Math.min(0.99, 0.1 + m.progress * 0.85), "Recognizing");
       else if (m.status && m.status !== "recognizing text") onProgress?.(0.05, m.status);
@@ -433,6 +437,8 @@ export const compare: FileProcessor = async (files, { onProgress }) => {
     stats: { Added: String(s.added), Removed: String(s.removed), Unchanged: String(s.unchanged) },
   };
 };
+
+export { protect, unlock, sign, flatten, formFields, redactText, splitSmart } from "./advanced";
 
 export const repair: FileProcessor = async (files, { onProgress }) => {
   const outputs: ProcessorFile[] = [];

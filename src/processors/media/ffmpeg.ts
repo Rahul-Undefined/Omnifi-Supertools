@@ -3,12 +3,11 @@ import { ProcessorError, throwIfAborted } from "@/types/processor";
 
 /**
  * FFmpeg WebAssembly, single-threaded build so it works without
- * cross-origin isolation headers. The core is fetched once from the
- * configured base URL (default: jsDelivr) and cached by the browser.
- * Override with NEXT_PUBLIC_FFMPEG_CORE_URL to self-host on the intranet.
+ * cross-origin isolation headers. The core is served by this app itself
+ * (public/ffmpeg) and cached by the browser after first use.
  */
-const CORE_VERSION = "0.12.10";
-const BASE = process.env.NEXT_PUBLIC_FFMPEG_CORE_URL || `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${CORE_VERSION}/dist/umd`;
+// The core ships with the app under public/ffmpeg (copied from @ffmpeg/core), so no CDN is needed.
+const BASE = process.env.NEXT_PUBLIC_FFMPEG_CORE_URL || "/ffmpeg";
 
 let instance: FFmpeg | null = null;
 let loading: Promise<FFmpeg> | null = null;

@@ -21,6 +21,7 @@ export const site = {
     { href: "/favorites", label: "Favorites" },
     { href: "/recent", label: "Recent" },
     { href: "/ai", label: "AI" },
+    { href: "/feedback", label: "Ideas" },
     { href: "/admin", label: "Admin", adminOnly: true },
   ],
   limits: {

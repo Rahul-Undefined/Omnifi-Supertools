@@ -33,7 +33,7 @@ export default function FeedbackPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 sm:px-6 py-10">
-      <PageHeader title="Share an idea" description="Tell the SuperTools team what to build, fix or change. Everything lands on the admin page." icon="Lightbulb" />
+      <PageHeader title="Share an idea" description="Which tool would save you time? What is annoying? Tell us here. Every note goes straight to the admin dashboard." icon="Lightbulb" />
       {done ? (
         <div className="rounded-control border border-success/40 bg-success-soft/40 p-8 text-center">
           <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success text-navy-800"><Check className="h-6 w-6" strokeWidth={3} /></span>
@@ -51,7 +51,7 @@ export default function FeedbackPage() {
             <div>
               <Label htmlFor="fb-kind">Type</Label>
               <Select id="fb-kind" value={kind} onChange={(e) => setKind(e.target.value)}>
-                <option value="idea">Idea for a new tool or feature</option>
+                <option value="idea">Tool or feature I would like added</option>
                 <option value="bug">Something is broken</option>
                 <option value="question">Question</option>
                 <option value="praise">This helped me</option>

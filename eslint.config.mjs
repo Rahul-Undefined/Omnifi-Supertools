@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored WebAssembly engines served as static files (FFmpeg, Tesseract).
+    "public/**",
   ]),
 ]);
 

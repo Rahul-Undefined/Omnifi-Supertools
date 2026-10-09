@@ -204,3 +204,48 @@ body {
 .prose-omnifi a { color: var(--indigo); text-decoration: underline; }
 .prose-omnifi table { border-collapse: collapse; width: 100%; } .prose-omnifi td, .prose-omnifi th { border: 1px solid var(--border); padding: 0.4em 0.6em; }
 .prose-omnifi blockquote { border-left: 3px solid var(--indigo); padding-left: 1em; color: var(--foreground-muted); }
+
+/* ---------- Animated hero backdrop (brand colours only, slow and subtle) ---------- */
+.hero-animated {
+  background: radial-gradient(120% 90% at 100% 0%, #131a6b 0%, #0a0f3d 55%, #070b2e 100%);
+}
+.hero-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  opacity: 0.55;
+  pointer-events: none;
+  will-change: transform;
+}
+.hero-blob-a {
+  width: 42rem; height: 42rem; left: -12rem; top: -16rem;
+  background: radial-gradient(closest-side, rgba(79, 91, 213, 0.55), transparent 70%);
+  animation: hero-drift-a 26s ease-in-out infinite alternate;
+}
+.hero-blob-b {
+  width: 34rem; height: 34rem; right: -8rem; bottom: -14rem;
+  background: radial-gradient(closest-side, rgba(139, 145, 227, 0.4), transparent 70%);
+  animation: hero-drift-b 32s ease-in-out infinite alternate;
+}
+.hero-blob-c {
+  width: 26rem; height: 26rem; left: 45%; top: 30%;
+  background: radial-gradient(closest-side, rgba(107, 107, 253, 0.3), transparent 70%);
+  animation: hero-drift-c 38s ease-in-out infinite alternate;
+}
+.hero-grid {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0.35;
+  background-image: linear-gradient(rgba(139, 145, 227, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(139, 145, 227, 0.08) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(70% 70% at 60% 40%, #000 30%, transparent 100%);
+  animation: hero-grid-pan 60s linear infinite;
+}
+.hero-motif { animation: hero-float 14s ease-in-out infinite; }
+.hero-motif-2 { animation: hero-float 18s ease-in-out infinite reverse; }
+@keyframes hero-drift-a { from { transform: translate(0, 0) scale(1); } to { transform: translate(14rem, 8rem) scale(1.15); } }
+@keyframes hero-drift-b { from { transform: translate(0, 0) scale(1); } to { transform: translate(-12rem, -8rem) scale(1.2); } }
+@keyframes hero-drift-c { from { transform: translate(0, 0); } to { transform: translate(-10rem, 6rem); } }
+@keyframes hero-grid-pan { from { background-position: 0 0, 0 0; } to { background-position: 64px 64px, 64px 64px; } }
+@keyframes hero-float { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-14px) rotate(3deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .hero-blob, .hero-grid, .hero-motif, .hero-motif-2 { animation: none !important; }
+}

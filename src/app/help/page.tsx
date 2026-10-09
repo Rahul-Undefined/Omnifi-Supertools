@@ -33,7 +33,7 @@ export default function HelpPage() {
           <li>Most file tools accept many files at once and show per-file progress with retry for failures.</li>
           <li>Chain tools on the Workflows page: for example OCR, then Extract tables, then CSV to Excel.</li>
           <li>Press <Kbd>F</Kbd> on any tool page to favorite it. Favorites appear on the home page.</li>
-          <li>Video and audio tools load an FFmpeg engine on first use (about 30 MB). It is cached afterwards.</li>
+          <li>Video, audio and OCR engines are served by SuperTools itself (no third-party downloads). The first use loads about 30 MB, cached afterwards.</li>
           <li>Have an idea or found a bug? Use <a href="/feedback" className="text-accent underline">Share an idea</a>; notes go straight to the admin page.</li>
         </ul>
       </section>

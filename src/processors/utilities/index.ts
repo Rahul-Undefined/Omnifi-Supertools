@@ -2,6 +2,7 @@ import type { CalcProcessor } from "@/types/processor";
 import { ProcessorError } from "@/types/processor";
 import { formatNumber } from "@/lib/utils";
 import { fileFromText } from "../shared/output";
+export { unitConvert, dateMath } from "./units";
 import { resolveZone, convertBetweenZones, parseLocalDateTime, ZONE_PRESETS } from "./timezones";
 
 /* ---------------- Time zone converter ---------------- */
