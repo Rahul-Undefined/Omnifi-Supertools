@@ -18,10 +18,13 @@ export const site = {
     { href: "/", label: "Home" },
     { href: "/tools", label: "Tools" },
     { href: "/workflows", label: "Workflows" },
-    { href: "/favorites", label: "Favorites" },
-    { href: "/recent", label: "Recent" },
     { href: "/ai", label: "AI" },
     { href: "/feedback", label: "Ideas" },
+  ],
+  /** Shown in the account menu (and the mobile menu). Admin only for admins. */
+  userNav: [
+    { href: "/favorites", label: "Favorites" },
+    { href: "/recent", label: "Recently used" },
     { href: "/admin", label: "Admin", adminOnly: true },
   ],
   limits: {

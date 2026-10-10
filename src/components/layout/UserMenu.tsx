@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, ShieldCheck, Lightbulb } from "lucide-react";
+import { LogOut, ShieldCheck, Lightbulb, Star, Clock } from "lucide-react";
 import { useSession } from "@/store/session";
 
 export function UserMenu() {
@@ -26,7 +26,7 @@ export function UserMenu() {
   const initials = user.name.split(/\s+/).map((p) => p[0]).join("").slice(0, 2).toUpperCase();
   return (
     <div className="relative flex items-center gap-2" ref={ref}>
-      <span className="hidden md:inline text-sm text-body">Hi, <span className="font-medium text-foreground">{first}</span></span>
+      <span className="hidden xl:inline whitespace-nowrap text-sm text-body">Hi, <span className="font-medium text-foreground">{first}</span></span>
       <button type="button" onClick={() => setOpen((o) => !o)} className="h-10 w-10 rounded-full bg-accent text-accent-foreground text-sm font-semibold inline-flex items-center justify-center hover:bg-accent-hover transition-colors" aria-label="Account menu" aria-haspopup="menu" aria-expanded={open}>
         {initials || "?"}
       </button>
@@ -38,6 +38,8 @@ export function UserMenu() {
             <p className="mt-0.5 text-[11px] uppercase tracking-wide text-muted">{user.role}{user.via === "microsoft" ? " · Microsoft" : ""}</p>
           </div>
           <div className="my-1 h-px bg-border" />
+          <Link href="/favorites" onClick={() => setOpen(false)} className="flex items-center gap-2.5 rounded-control-sm px-3 py-2 text-sm text-body hover:bg-surface-2"><Star className="h-4 w-4" /> Favorites</Link>
+          <Link href="/recent" onClick={() => setOpen(false)} className="flex items-center gap-2.5 rounded-control-sm px-3 py-2 text-sm text-body hover:bg-surface-2"><Clock className="h-4 w-4" /> Recently used</Link>
           <Link href="/feedback" onClick={() => setOpen(false)} className="flex items-center gap-2.5 rounded-control-sm px-3 py-2 text-sm text-body hover:bg-surface-2"><Lightbulb className="h-4 w-4" /> Share an idea</Link>
           {user.role === "admin" && <Link href="/admin" onClick={() => setOpen(false)} className="flex items-center gap-2.5 rounded-control-sm px-3 py-2 text-sm text-body hover:bg-surface-2"><ShieldCheck className="h-4 w-4" /> Admin</Link>}
           <button type="button" onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); setOpen(false); await refresh(); router.replace("/login"); }} className="flex w-full items-center gap-2.5 rounded-control-sm px-3 py-2 text-sm text-body hover:bg-surface-2"><LogOut className="h-4 w-4" /> Sign out</button>
