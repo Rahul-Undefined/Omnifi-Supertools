@@ -31,3 +31,17 @@ describe("search", () => {
     expect(top("mrege pdf").length).toBeGreaterThan(0);
   });
 });
+
+describe("natural-language search", () => {
+  const top = (q: string, n = 3) => searchTools(q, n).map((h) => h.tool.id);
+  it("understands plain sentences and conversions", () => {
+    expect(top("i want to convert image into pdf")[0]).toMatch(/^(jpg-to-pdf|image-to-pdf)$/);
+    expect(top("make my pdf smaller")[0]).toBe("compress-pdf");
+    expect(top("turn a video into audio")).toContain("extract-audio");
+    expect(top("how do i black out a name in a pdf")).toContain("redact-pdf");
+    expect(top("what time is 3pm in london")).toContain("timezone-converter");
+    expect(top("spreadsheet to pdf")[0]).toBe("excel-to-pdf");
+    expect(top("i need a strong password")[0]).toBe("password-tool");
+    expect(top("join several pdfs")[0]).toBe("merge-pdf");
+  });
+});
