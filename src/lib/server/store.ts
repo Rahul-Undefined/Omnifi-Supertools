@@ -26,10 +26,20 @@ export interface AuditEvent {
   ip?: string;
 }
 
+export interface Account {
+  username: string; // lower-case login name or email
+  name: string;
+  email: string;
+  role: "admin" | "user";
+  passwordHash: string; // scrypt$salt$hash
+  createdAt: number;
+}
+
 interface Snapshot {
   usage: UsageEvent[];
   audit: AuditEvent[];
   users: Record<string, number>; // userId -> last seen
+  accounts?: Account[];
 }
 
 const MAX_USAGE = 20_000;
@@ -39,6 +49,10 @@ interface Backend {
   recordUsage(e: UsageEvent): Promise<void>;
   recordAudit(e: AuditEvent): Promise<void>;
   snapshot(): Promise<Snapshot>;
+  listAccounts(): Promise<Account[]>;
+  getAccount(username: string): Promise<Account | null>;
+  saveAccount(a: Account): Promise<void>;
+  deleteAccount(username: string): Promise<void>;
   kind: string;
 }
 
@@ -81,6 +95,22 @@ class FileBackend implements Backend {
   async snapshot() {
     return structuredClone(await this.load());
   }
+  async listAccounts() {
+    return [...((await this.load()).accounts ?? [])];
+  }
+  async getAccount(username: string) {
+    return (await this.load()).accounts?.find((a) => a.username === username.toLowerCase()) ?? null;
+  }
+  async saveAccount(a: Account) {
+    const d = await this.load();
+    d.accounts = [...(d.accounts ?? []).filter((x) => x.username !== a.username), a];
+    this.flush();
+  }
+  async deleteAccount(username: string) {
+    const d = await this.load();
+    d.accounts = (d.accounts ?? []).filter((x) => x.username !== username.toLowerCase());
+    this.flush();
+  }
 }
 
 /* ---------- PostgreSQL backend ---------- */
@@ -99,6 +129,7 @@ class PgBackend implements Backend {
           CREATE INDEX IF NOT EXISTS usage_events_at ON usage_events (at);
           CREATE TABLE IF NOT EXISTS audit_events (id BIGSERIAL PRIMARY KEY, at TIMESTAMPTZ NOT NULL, actor TEXT NOT NULL, action TEXT NOT NULL, detail TEXT, ip TEXT);
           CREATE TABLE IF NOT EXISTS users_seen (user_id TEXT PRIMARY KEY, last_seen TIMESTAMPTZ NOT NULL);
+          CREATE TABLE IF NOT EXISTS accounts (username TEXT PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, role TEXT NOT NULL, password_hash TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL);
         `);
       })();
     }
@@ -125,6 +156,22 @@ class PgBackend implements Backend {
       audit: audit.rows.map((r) => ({ ...r, at: Number(r.at) })),
       users: Object.fromEntries(users.rows.map((r) => [r.user_id, Number(r.last_seen)])),
     };
+  }
+  async listAccounts(): Promise<Account[]> {
+    const p = await this.init();
+    const r = await p.query("SELECT username, name, email, role, password_hash, extract(epoch from created_at)*1000 AS created_at FROM accounts ORDER BY created_at");
+    return r.rows.map((x) => ({ username: x.username, name: x.name, email: x.email, role: x.role, passwordHash: x.password_hash, createdAt: Number(x.created_at) }));
+  }
+  async getAccount(username: string) {
+    return (await this.listAccounts()).find((a) => a.username === username.toLowerCase()) ?? null;
+  }
+  async saveAccount(a: Account) {
+    const p = await this.init();
+    await p.query("INSERT INTO accounts (username, name, email, role, password_hash, created_at) VALUES ($1,$2,$3,$4,$5,to_timestamp($6/1000.0)) ON CONFLICT (username) DO UPDATE SET name=EXCLUDED.name, email=EXCLUDED.email, role=EXCLUDED.role, password_hash=EXCLUDED.password_hash", [a.username, a.name, a.email, a.role, a.passwordHash, a.createdAt]);
+  }
+  async deleteAccount(username: string) {
+    const p = await this.init();
+    await p.query("DELETE FROM accounts WHERE username = $1", [username.toLowerCase()]);
   }
 }
 

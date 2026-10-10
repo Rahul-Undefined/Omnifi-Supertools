@@ -7,6 +7,7 @@ import { site } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
+import { UserMenu } from "./UserMenu";
 import { Kbd } from "@/components/ui/Card";
 import { openPalette } from "./CommandPalette";
 
@@ -51,6 +52,7 @@ export function Header() {
             <Search className="h-5 w-5" />
           </button>
           <ThemeToggle />
+          <UserMenu />
           <button type="button" onClick={() => setOpen((o) => !o)} className="lg:hidden h-10 w-10 inline-flex items-center justify-center rounded-control text-body hover:bg-surface-2" aria-label="Menu" aria-expanded={open}>
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>

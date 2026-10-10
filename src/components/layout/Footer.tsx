@@ -12,7 +12,7 @@ export function Footer() {
           <p className="mt-3 text-sm text-muted max-w-xs">One place for the tools you actually need. Files are processed in your browser wherever possible.</p>
         </div>
         <FooterCol title="Product" links={[["/tools", "All tools"], ["/workflows", "Workflows"], ["/ai", "AI tools"], ["/help", "Help & shortcuts"], ["/feedback", "Share an idea"]]} />
-        <FooterCol title="You" links={[["/favorites", "Favorites"], ["/recent", "Recently used"], ["/admin", "Admin"], ["/login?next=/admin", "Admin sign in"]]} />
+        <FooterCol title="You" links={[["/favorites", "Favorites"], ["/recent", "Recently used"], ["/admin", "Admin"]]} />
         <div>
           <h3 className="text-sm font-semibold text-foreground">Status</h3>
           <ul className="mt-3 space-y-1.5 text-sm text-muted">

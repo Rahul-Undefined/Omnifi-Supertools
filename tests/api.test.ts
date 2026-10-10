@@ -12,7 +12,7 @@ vi.mock("next/headers", () => ({
 
 const recordAudit = vi.fn();
 const recordUsage = vi.fn();
-vi.mock("@/lib/server/store", () => ({ store: () => ({ recordAudit, recordUsage, snapshot: async () => ({ usage: [], audit: [], users: {} }), kind: "mock" }) }));
+vi.mock("@/lib/server/store", () => ({ store: () => ({ recordAudit, recordUsage, snapshot: async () => ({ usage: [], audit: [], users: {} }), listAccounts: async () => [], getAccount: async () => null, saveAccount: async () => {}, deleteAccount: async () => {}, kind: "mock" }) }));
 
 const json = (url: string, body: unknown, headers: Record<string, string> = {}) =>
   new Request(`http://localhost${url}`, { method: "POST", headers: { "content-type": "application/json", host: "localhost", ...headers }, body: JSON.stringify(body) });

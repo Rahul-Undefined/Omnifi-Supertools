@@ -26,6 +26,19 @@ services:
       # Admin password for /admin (set in the Render dashboard; the admin page is open to everyone until it is set).
       - key: ADMIN_PASSWORD
         sync: false
+      # Microsoft 365 sign-in (Entra ID app registration). See docs/DEPLOYMENT.md.
+      - key: AZURE_CLIENT_ID
+        sync: false
+      - key: AZURE_CLIENT_SECRET
+        sync: false
+      - key: AZURE_TENANT_ID
+        sync: false
+      - key: ADMIN_EMAILS
+        sync: false
+      - key: AUTH_ALLOWED_DOMAINS
+        value: myomnifi.com
+      - key: APP_URL
+        value: https://omnifi-supertools.onrender.com
       # Optional: free PostgreSQL (e.g. Neon) so usage stats and team feedback survive redeploys.
       - key: DATABASE_URL
         sync: false

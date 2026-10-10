@@ -19,7 +19,9 @@ Nothing about file names or contents is written to logs or analytics. `/api/tele
 - Local accounts: passwords are scrypt-hashed (`scripts/hash-password.mjs`). Plain `ADMIN_PASSWORD` is compared in constant time and intended for bootstrap only.
 - SSO: `AUTH_MODE=header` trusts `x-forwarded-user` / `x-forwarded-email` from a reverse proxy (Azure AD Application Proxy, oauth2-proxy). Only enable behind a proxy that strips those headers from client requests.
 - RBAC: `admin` role required for `/admin` and `/api/admin/*`, enforced in server code (the edge proxy only redirects when no cookie exists).
-- Open mode: when no accounts are configured and no SSO is set, the admin page is readable by anyone on the network and says so. The header shows no sign-in button; `/login` still works once accounts exist.
+- Sign-in gate: as soon as any sign-in method exists (ADMIN_PASSWORD, USERS_JSON, Microsoft, header SSO) the edge proxy requires a valid session for every page and API except the sign-in flow, health check and static engine files. With nothing configured (fresh local dev) the site is open.
+- Microsoft sign-in uses OpenID Connect with a state + nonce cookie, verifies the ID token signature against the Microsoft JWKS and the client-id audience, and restricts to `AUTH_ALLOWED_DOMAINS`.
+- "Keep me signed in" issues a 30-day cookie; otherwise the session cookie ends when the browser closes.
 - Login is rate limited and failed attempts are audited. Unknown users burn the same scrypt time as real ones.
 
 ## CSRF

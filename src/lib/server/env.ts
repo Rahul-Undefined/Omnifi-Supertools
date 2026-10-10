@@ -22,6 +22,18 @@ export const env = {
   adminUser: str("ADMIN_USER", "admin"),
   adminPassword: str("ADMIN_PASSWORD"),
   usersJson: str("USERS_JSON"),
+  /** Session length when "Keep me signed in" is ticked (days). */
+  rememberDays: Number(str("SESSION_REMEMBER_DAYS", "30")),
+  /** Microsoft 365 sign-in (Entra ID app registration). */
+  azureClientId: str("AZURE_CLIENT_ID"),
+  azureClientSecret: str("AZURE_CLIENT_SECRET"),
+  azureTenantId: str("AZURE_TENANT_ID", "common"),
+  /** Only these email domains may sign in with Microsoft (comma separated). Empty = any. */
+  allowedDomains: str("AUTH_ALLOWED_DOMAINS", "myomnifi.com").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean),
+  /** Emails that get the admin role on Microsoft sign-in (comma separated). */
+  adminEmails: str("ADMIN_EMAILS", "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean),
+  /** Public base URL for OAuth redirects (e.g. https://omnifi-supertools.onrender.com). Derived from the request when empty. */
+  appUrl: str("APP_URL"),
   /** AI */
   aiProvider: str("AI_PROVIDER") as "" | "anthropic" | "openai" | "openai-compatible",
   aiModel: str("AI_MODEL"),

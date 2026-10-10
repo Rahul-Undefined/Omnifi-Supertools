@@ -72,6 +72,18 @@ See `.env.example`. The important ones:
 
 `/api/rates` fetches daily rates from open.er-api.com (fallback: frankfurter.dev) and caches them for an hour. Both are keyless public feeds. If the server has no internet access, the currency converter shows a clear error and everything else keeps working.
 
+## Microsoft 365 sign-in (recommended for the team)
+
+1. In the Azure portal go to **Microsoft Entra ID → App registrations → New registration**. Name: `Omnifi SuperTools`. Supported account types: *Accounts in this organizational directory only*. Redirect URI: platform **Web**, value `https://omnifi-supertools.onrender.com/api/auth/microsoft/callback`. Register.
+2. On the Overview page copy **Application (client) ID** → `AZURE_CLIENT_ID` and **Directory (tenant) ID** → `AZURE_TENANT_ID`.
+3. **Certificates & secrets → New client secret** (24 months). Copy the *Value* → `AZURE_CLIENT_SECRET`.
+4. **API permissions** should contain Microsoft Graph `openid`, `profile`, `email` (delegated, added by default). Click *Grant admin consent* so staff are not prompted.
+5. In Render → Environment add the three variables plus `ADMIN_EMAILS=rahul@myomnifi.com` (comma separated for more). `AUTH_ALLOWED_DOMAINS` defaults to `myomnifi.com`.
+
+After the redeploy the sign-in page shows "Continue with Microsoft". Everyone with an Omnifi work account gets the `user` role; emails listed in `ADMIN_EMAILS` get `admin`. Ticking "Keep me signed in" keeps the session for `SESSION_REMEMBER_DAYS` (30) days.
+
+Named local accounts (username + password) can also be created on the admin page; they persist only when `DATABASE_URL` is set.
+
 ## Behind a reverse proxy / SSO
 
 Put the app behind Azure AD Application Proxy, oauth2-proxy or similar, set `AUTH_MODE=header`, and make sure the proxy **sets** `x-forwarded-email` / `x-forwarded-user` and **strips** any such headers coming from clients. List administrator emails in `AUTH_ADMINS`.
