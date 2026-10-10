@@ -17,6 +17,19 @@ const ERRORS: Record<string, string> = {
   "no-email": "Your Microsoft account has no email address we can use.",
 };
 
+/** Plain-English hints for the Microsoft error codes an admin is most likely to hit. */
+const AAD_HINTS: Record<string, string> = {
+  AADSTS7000215: "The client secret is wrong. In Azure, copy the secret's Value column (not the Secret ID) into AZURE_CLIENT_SECRET.",
+  AADSTS7000222: "The client secret has expired. Create a new one in Azure and update AZURE_CLIENT_SECRET.",
+  AADSTS50011: "The redirect URI does not match. In Azure, add exactly https://omnifi-supertools.onrender.com/api/auth/microsoft/callback as a Web redirect URI.",
+  AADSTS700016: "The app was not found in this tenant. Check AZURE_CLIENT_ID and AZURE_TENANT_ID match the app registration.",
+  AADSTS90002: "The tenant ID is wrong. Use the Directory (tenant) ID from the app's Overview page.",
+  AADSTS65001: "Admin consent is missing. In Azure, under API permissions, click 'Grant admin consent'.",
+  AADSTS700051: "The response type is not enabled. In Azure under Authentication, make sure the redirect URI is of type Web.",
+  AADSTS50194: "The app is single-tenant but AZURE_TENANT_ID is 'common'. Set it to your Directory (tenant) ID.",
+  AADSTS7000218: "The app is treated as a public client. In Azure under Authentication, set 'Allow public client flows' to No and use a Web redirect URI.",
+};
+
 export default function LoginPage() {
   return (
     <Suspense fallback={null}>
@@ -37,7 +50,11 @@ function LoginForm() {
   const [showLocal, setShowLocal] = useState(false);
   const [error, setError] = useState<{ message: string; hint?: string } | null>(() => {
     const e = params.get("error");
-    return e ? { message: ERRORS[e] ?? "Sign-in failed. Try again." } : null;
+    if (!e) return null;
+    const detail = params.get("detail") ?? "";
+    const code = detail.match(/AADSTS\d+/)?.[0];
+    const hint = code ? `${code}: ${AAD_HINTS[code] ?? "Look this code up in the Render logs or Microsoft docs."}` : detail || undefined;
+    return { message: ERRORS[e] ?? "Sign-in failed. Try again.", hint };
   });
   const [busy, setBusy] = useState(false);
 

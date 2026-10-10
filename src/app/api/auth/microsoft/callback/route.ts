@@ -12,7 +12,7 @@ const jwks = () => createRemoteJWKSet(new URL(`https://login.microsoftonline.com
 /** Step 2: exchange the code, verify the ID token, create the session. */
 export async function GET(req: Request) {
   const base = appUrl(req);
-  const fail = (code: string) => NextResponse.redirect(`${base}/login?error=${code}`);
+  const fail = (code: string, detail?: string) => NextResponse.redirect(`${base}/login?error=${code}${detail ? `&detail=${encodeURIComponent(detail)}` : ""}`);
   const url = new URL(req.url);
   const jar = await cookies();
   const raw = jar.get("omnifi_st_oauth")?.value;
@@ -24,7 +24,7 @@ export async function GET(req: Request) {
   } catch {
     return fail("session-expired");
   }
-  if (url.searchParams.get("error")) return fail("microsoft-denied");
+  if (url.searchParams.get("error")) return fail("microsoft-denied", url.searchParams.get("error_description")?.match(/AADSTS\d+/)?.[0] ?? url.searchParams.get("error") ?? undefined);
   const code = url.searchParams.get("code");
   if (!code || url.searchParams.get("state") !== saved.state) return fail("state-mismatch");
 
@@ -36,7 +36,9 @@ export async function GET(req: Request) {
   const tokens = await tokenRes.json().catch(() => ({}));
   if (!tokenRes.ok || !tokens.id_token) {
     console.error("Microsoft token exchange failed", tokens.error_description ?? tokens.error);
-    return fail("token-exchange");
+    // Only the AADSTS code is shown to the user; it is not sensitive and pinpoints the misconfiguration.
+    const aad = String(tokens.error_description ?? "").match(/AADSTS\d+/)?.[0] ?? String(tokens.error ?? "");
+    return fail("token-exchange", aad);
   }
 
   let claims: Record<string, unknown>;
@@ -45,7 +47,7 @@ export async function GET(req: Request) {
     claims = verified.payload as Record<string, unknown>;
   } catch (e) {
     console.error("ID token verification failed", e);
-    return fail("token-invalid");
+    return fail("token-invalid", e instanceof Error ? e.message.slice(0, 80) : undefined);
   }
   if (claims.nonce !== saved.nonce) return fail("state-mismatch");
   const email = String(claims.email ?? claims.preferred_username ?? "").toLowerCase();
