@@ -1,0 +1,20 @@
+# Keeps the free Render instance awake during working hours so the team never
+# sees Render's "service waking up" screen. Render spins a free service down
+# after 15 minutes without traffic; this pings the health endpoint every 14
+# minutes, weekdays 02:00-18:00 UTC (07:30-23:30 IST / 10 PM-2 PM US Eastern).
+# Private repos get 2,000 free Actions minutes a month; this uses about 1,500.
+name: Keep Render awake
+on:
+  schedule:
+    - cron: "*/14 2-17 * * 1-5"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping health endpoint
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://omnifi-supertools.onrender.com/api/health)
+          echo "health -> $code"
+          test "$code" = "200"
