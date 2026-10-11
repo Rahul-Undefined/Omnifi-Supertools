@@ -1,12 +1,13 @@
 # Keeps the free Render instance awake during working hours so the team never
 # sees Render's "service waking up" screen. Render spins a free service down
 # after 15 minutes without traffic; this pings the health endpoint every 14
-# minutes, weekdays 02:00-18:00 UTC (07:30-23:30 IST / 10 PM-2 PM US Eastern).
-# Private repos get 2,000 free Actions minutes a month; this uses about 1,500.
+# minutes, Monday to Friday 11:00 AM to 10:00 PM IST (05:30-16:30 UTC).
+# Weekends are left alone: the first visit then takes ~30 s to wake the service.
+# Private repos get 2,000 free Actions minutes a month; this uses about 1,000.
 name: Keep Render awake
 on:
   schedule:
-    - cron: "*/14 2-17 * * 1-5"
+    - cron: "*/14 5-16 * * 1-5"
   workflow_dispatch:
 jobs:
   ping:

@@ -17,3 +17,4 @@ export const fillForm = interactive("Fill PDF form");
 export const invoice = interactive("Invoice generator");
 export const tts = interactive("Text to speech");
 export const dictation = interactive("Dictation");
+export const stepsRecorder = interactive("Steps Recorder");

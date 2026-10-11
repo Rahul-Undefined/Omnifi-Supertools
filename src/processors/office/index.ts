@@ -361,3 +361,4 @@ export const metadata: FileProcessor = async (files) => {
 };
 
 export { excelToPdf, docxToPdf, pptxToPdf } from "./topdf";
+export { explainFormula, consolidate, formulaAudit } from "./advanced";

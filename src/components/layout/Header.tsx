@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, Menu, X } from "lucide-react";
+import { Search, Menu, X, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { site } from "@/config/site";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,13 @@ export function Header() {
           <span className="shrink-0"><Logo /></span>
           <nav className="hidden lg:flex items-center gap-0.5 whitespace-nowrap" aria-label="Primary">
             {site.nav.map((n) => {
+              if ("external" in n && n.external) {
+                return (
+                  <a key={n.href} href={n.href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-control-sm px-3 py-2 text-sm font-medium text-body transition-colors duration-200 hover:bg-surface-2 hover:text-foreground">
+                    {n.label}<ExternalLink className="h-3.5 w-3.5 text-muted" aria-hidden />
+                  </a>
+                );
+              }
               const active = n.href === "/" ? path === "/" : path.startsWith(n.href);
               return (
                 <Link
@@ -64,9 +71,13 @@ export function Header() {
       {open && (
         <nav className="lg:hidden border-t border-border bg-background px-4 py-3 grid gap-1 animate-fade-up" aria-label="Primary mobile">
           {mobileItems.map((n) => (
+            "external" in n && n.external ? (
+              <a key={n.href} href={n.href} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)} className="rounded-control-sm px-3 py-2.5 text-sm font-medium text-body hover:bg-surface-2">{n.label} ↗</a>
+            ) : (
             <Link key={n.href} href={n.href} onClick={() => setOpen(false)} className={cn("rounded-control-sm px-3 py-2.5 text-sm font-medium", path.startsWith(n.href) && n.href !== "/" ? "bg-accent-soft text-accent" : "text-body hover:bg-surface-2")}>
               {n.label}
             </Link>
+            )
           ))}
         </nav>
       )}

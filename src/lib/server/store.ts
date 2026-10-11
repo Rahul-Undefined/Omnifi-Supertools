@@ -35,11 +35,19 @@ export interface Account {
   createdAt: number;
 }
 
+/** Per-person preferences synced across browsers: favorites and recently used tools. */
+export interface UserPrefs {
+  favorites: string[];
+  recent: { id: string; at: number }[];
+  updatedAt: number;
+}
+
 interface Snapshot {
   usage: UsageEvent[];
   audit: AuditEvent[];
   users: Record<string, number>; // userId -> last seen
   accounts?: Account[];
+  prefs?: Record<string, UserPrefs>;
 }
 
 const MAX_USAGE = 20_000;
@@ -53,6 +61,8 @@ interface Backend {
   getAccount(username: string): Promise<Account | null>;
   saveAccount(a: Account): Promise<void>;
   deleteAccount(username: string): Promise<void>;
+  getPrefs(userId: string): Promise<UserPrefs | null>;
+  savePrefs(userId: string, prefs: UserPrefs): Promise<void>;
   kind: string;
 }
 
@@ -111,6 +121,14 @@ class FileBackend implements Backend {
     d.accounts = (d.accounts ?? []).filter((x) => x.username !== username.toLowerCase());
     this.flush();
   }
+  async getPrefs(userId: string) {
+    return (await this.load()).prefs?.[userId] ?? null;
+  }
+  async savePrefs(userId: string, prefs: UserPrefs) {
+    const d = await this.load();
+    d.prefs = { ...(d.prefs ?? {}), [userId]: prefs };
+    this.flush();
+  }
 }
 
 /* ---------- PostgreSQL backend ---------- */
@@ -130,6 +148,7 @@ class PgBackend implements Backend {
           CREATE TABLE IF NOT EXISTS audit_events (id BIGSERIAL PRIMARY KEY, at TIMESTAMPTZ NOT NULL, actor TEXT NOT NULL, action TEXT NOT NULL, detail TEXT, ip TEXT);
           CREATE TABLE IF NOT EXISTS users_seen (user_id TEXT PRIMARY KEY, last_seen TIMESTAMPTZ NOT NULL);
           CREATE TABLE IF NOT EXISTS accounts (username TEXT PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, role TEXT NOT NULL, password_hash TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL);
+          CREATE TABLE IF NOT EXISTS user_prefs (user_id TEXT PRIMARY KEY, data JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL);
         `);
       })();
     }
@@ -172,6 +191,15 @@ class PgBackend implements Backend {
   async deleteAccount(username: string) {
     const p = await this.init();
     await p.query("DELETE FROM accounts WHERE username = $1", [username.toLowerCase()]);
+  }
+  async getPrefs(userId: string) {
+    const p = await this.init();
+    const r = await p.query("SELECT data FROM user_prefs WHERE user_id = $1", [userId]);
+    return r.rows.length ? (r.rows[0].data as UserPrefs) : null;
+  }
+  async savePrefs(userId: string, prefs: UserPrefs) {
+    const p = await this.init();
+    await p.query("INSERT INTO user_prefs (user_id, data, updated_at) VALUES ($1, $2, to_timestamp($3/1000.0)) ON CONFLICT (user_id) DO UPDATE SET data = EXCLUDED.data, updated_at = EXCLUDED.updated_at", [userId, JSON.stringify(prefs), prefs.updatedAt]);
   }
 }
 

@@ -7,6 +7,7 @@ import { Footer } from "@/components/layout/Footer";
 import { CommandPalette } from "@/components/layout/CommandPalette";
 import { ThemeInit } from "@/components/layout/ThemeInit";
 import { Shortcuts } from "@/components/layout/Shortcuts";
+import { PrefsSync } from "@/components/layout/PrefsSync";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"], display: "swap" });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"], display: "swap" });
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <ThemeInit />
         <Shortcuts />
+        <PrefsSync />
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />

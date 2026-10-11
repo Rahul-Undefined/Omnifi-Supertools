@@ -170,4 +170,4 @@ export const hexDump: FileProcessor = async (files, { options }) => {
   return textOutput(text.trim(), undefined, { Shown: `${n} bytes` });
 };
 export { hexDump as hex };
-
+export { batchRename } from "./rename";

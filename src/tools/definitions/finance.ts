@@ -346,4 +346,28 @@ export const financeTools: ToolDefinition[] = [
     multiple: true,
     icon: "Receipt",
   },
+  {
+    id: "batch-ocr-statements",
+    name: "Batch OCR & statement extractor",
+    category: "finance",
+    description: "Drop a pile of bank or card statements (PDF or scans). Text PDFs are read directly; scanned ones are OCR'd in your browser. Transactions from every file land in one workbook with a per-file summary.",
+    keywords: ["batch ocr", "many statements", "scanned statements", "statements to excel", "bulk extract transactions", "credit card statement", "bank statement ocr", "month end"],
+    input: ["pdf", "image/jpeg", "image/png", "image/webp", "image/tiff"],
+    output: ["xlsx", "txt"],
+    processor: "finance.batchOcrStatements",
+    kind: "file",
+    status: "ready",
+    runtime: "browser",
+    multiple: true,
+    combine: true,
+    chainable: true,
+    icon: "ScanText",
+    options: [
+      { type: "select", key: "assume", label: "Ambiguous dates are", default: "mdy", options: [{ value: "mdy", label: "Month/Day/Year" }, { value: "dmy", label: "Day/Month/Year" }] },
+      { type: "select", key: "lang", label: "OCR language", default: "eng", options: [{ value: "eng", label: "English" }, { value: "spa", label: "Spanish" }, { value: "fra", label: "French" }, { value: "deu", label: "German" }, { value: "hin", label: "Hindi" }] },
+      { type: "checkbox", key: "forceOcr", label: "Force OCR even when the PDF has a text layer", default: false },
+      { type: "checkbox", key: "keepText", label: "Also keep the OCR text files", default: true },
+    ],
+    related: ["bank-statement-to-excel", "ocr-pdf", "statement-splitter"],
+  }
 ];

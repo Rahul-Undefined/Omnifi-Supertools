@@ -328,3 +328,4 @@ export const statementPdfToExcel: FileProcessor = async (files, { options, onPro
 
 export { statementSplit } from "./statement";
 export { salesTax, loanPayment, mileage, paymentTerms, prorate, businessDays, allocate, arAging, bankReconciliation } from "./us";
+export { batchOcrStatements } from "./batch";

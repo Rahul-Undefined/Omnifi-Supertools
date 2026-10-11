@@ -20,13 +20,21 @@ export const site = {
     { href: "/workflows", label: "Workflows" },
     { href: "/ai", label: "AI" },
     { href: "/feedback", label: "Ideas" },
+    { href: "https://extropyadvind.sharepoint.com/sites/OmnifiTechHub", label: "Tech Hub", external: true },
   ],
   /** Shown in the account menu (and the mobile menu). Admin only for admins. */
   userNav: [
     { href: "/favorites", label: "Favorites" },
     { href: "/recent", label: "Recently used" },
+    { href: "/downloads", label: "Downloads" },
     { href: "/admin", label: "Admin", adminOnly: true },
   ],
+  links: {
+    website: "https://www.myomnifi.com/",
+    techHub: "https://extropyadvind.sharepoint.com/sites/OmnifiTechHub",
+    stepsRecorder: "/downloads/Omnifi-Steps-Recorder.zip",
+  },
+  support: { name: "Rahul Ojha", email: "rahul@myomnifi.com" },
   limits: {
     /** Max size per file for browser-side tools (bytes). */
     browserFileBytes: 500 * 1024 * 1024,

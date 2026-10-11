@@ -121,4 +121,18 @@ export const utilityTools: ToolDefinition[] = [
     ],
     related: ["sales-tax-calculator", "percentage-calculator"],
   },
+  {
+    id: "steps-recorder",
+    name: "Steps Recorder (Windows app)",
+    category: "utilities",
+    description: "Download the Omnifi Steps Recorder: screen video plus a click-by-click report with screenshots, Word and HTML output. No install, no admin rights.",
+    keywords: ["steps recorder", "screen recorder", "record screen", "screenshot steps", "how to document a process", "bug report", "training video", "download", "windows app"],
+    input: [],
+    output: ["zip"],
+    processor: "custom.stepsRecorder",
+    kind: "custom",
+    status: "ready",
+    runtime: "browser",
+    icon: "MonitorPlay",
+  }
 ];
