@@ -1,6 +1,6 @@
 import "server-only";
 import { spawn, execFile } from "node:child_process";
-import { mkdtemp, readdir, rm, writeFile, stat } from "node:fs/promises";
+import { mkdtemp, readdir, rm, writeFile, stat, access } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { env } from "./env";
@@ -107,6 +107,9 @@ function baseArgs(flags: Set<string>): string[] {
 }
 
 async function cookiesFile(dir: string): Promise<string[]> {
+  if (env.ytdlpCookiesFile) {
+    try { await access(env.ytdlpCookiesFile); return ["--cookies", env.ytdlpCookiesFile]; } catch { /* no secret file mounted */ }
+  }
   if (!env.ytdlpCookies) return [];
   const p = path.join(dir, "cookies.txt");
   await writeFile(p, env.ytdlpCookies.replace(/\\n/g, "\n"), { mode: 0o600 });
@@ -141,7 +144,7 @@ const RETRYABLE = /failed to extract any player response|sign in to confirm|not 
 export function explainError(stderr: string): { message: string; hint?: string } {
   const s = stderr.toLowerCase();
   if (s.includes("failed to extract any player response")) return { message: "YouTube is not responding to this server's requests", hint: "YouTube either changed something the engine does not handle yet or is rate-limiting this cloud IP. The engine refreshes itself automatically; try again in a few minutes, or use the Windows helper from the Downloads page, which downloads from your own PC." };
-  if (s.includes("sign in to confirm") || s.includes("not a bot") || s.includes("confirm you’re not a bot")) return { message: "YouTube blocked this server (\"sign in to confirm you're not a bot\")", hint: "YouTube rate-limits cloud IP addresses. Use the Windows helper from the Downloads page, which downloads from your own PC, or ask the admin to set YTDLP_COOKIES in Render." };
+  if (s.includes("sign in to confirm") || s.includes("not a bot") || s.includes("confirm you’re not a bot")) return { message: "YouTube blocked this server (\"sign in to confirm you're not a bot\")", hint: "YouTube rate-limits cloud IP addresses. Use the Windows helper from the Downloads page, which downloads from your own PC, or ask the admin to add a YouTube cookies.txt as a Render secret file (see docs/DEPLOYMENT.md)." };
   if (s.includes("private video") || s.includes("login required") || s.includes("members-only") || s.includes("this video is private")) return { message: "This video is private or needs a signed-in account", hint: "Only public videos can be downloaded here." };
   if (s.includes("unsupported url") || s.includes("no video formats") || s.includes("unable to extract")) return { message: "No downloadable video was found at this address", hint: "Paste the link of the video page itself (not a channel, search page or embedded player)." };
   if (s.includes("video unavailable") || s.includes("has been removed") || s.includes("404")) return { message: "The video is unavailable or has been removed" };

@@ -52,6 +52,8 @@ export const env = {
   ffmpegBin: str("FFMPEG_BIN", "ffmpeg"),
   /** Netscape cookies.txt content (optional) for sites that block anonymous cloud downloads. */
   ytdlpCookies: str("YTDLP_COOKIES"),
+  /** Path to a cookies.txt on disk (Render "Secret Files"), preferred over the inline variable. */
+  ytdlpCookiesFile: str("YTDLP_COOKIES_FILE", "/etc/secrets/cookies.txt"),
   /** Optional HTTP/SOCKS proxy used only by the downloader, e.g. a residential proxy. */
   ytdlpProxy: str("YTDLP_PROXY"),
   ytdlpExtraArgs: str("YTDLP_EXTRA_ARGS"),

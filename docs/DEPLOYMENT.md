@@ -91,8 +91,7 @@ The Docker image installs the latest `yt-dlp` (pip) and FFmpeg, so the Video dow
 YouTube rate-limits cloud IP ranges ("sign in to confirm you're not a bot"). Options, in order of preference:
 
 1. Use the **Windows helper** from the Downloads page: the same engine on the person's own PC, which is not blocked.
-2. Set `YTDLP_COOKIES` in Render to the contents of a `cookies.txt` exported from a browser signed in to a throwaway Google account (Netscape format; newlines may be written as `
-`). Never use a personal account.
+2. Give the server a YouTube sign-in. In Render open the service → **Environment → Secret Files → Add Secret File**, filename `cookies.txt`, contents = a Netscape `cookies.txt` exported for youtube.com from a browser signed in to a **throwaway** Google account (never a personal one). It is mounted at `/etc/secrets/cookies.txt`, which the downloader picks up automatically (`YTDLP_COOKIES_FILE`). Export tip: sign in inside a private window, export with a "Get cookies.txt LOCALLY" extension, then close the private window without signing out, so YouTube does not rotate the cookies. `YTDLP_COOKIES` (inline contents) still works as an alternative.
 3. Set `YTDLP_PROXY` to a residential proxy URL.
 
 Each redeploy picks up the newest `yt-dlp`; if YouTube changes and downloads start failing, trigger a manual deploy in Render ("Clear build cache & deploy") to rebuild with the latest engine.

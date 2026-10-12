@@ -11,7 +11,7 @@ export async function GET() {
     available: cap.ok,
     version: cap.version,
     ffmpeg: cap.ffmpeg,
-    cookies: Boolean(env.ytdlpCookies),
+    cookies: Boolean(env.ytdlpCookies) || Boolean(env.ytdlpCookiesFile),
     proxy: Boolean(env.ytdlpProxy),
     maxMb: env.videoMaxMb,
     hint: cap.ok ? undefined : "yt-dlp is not installed on this machine. It is part of the Docker image used on Render; for local development run `pip install yt-dlp` and install FFmpeg.",
