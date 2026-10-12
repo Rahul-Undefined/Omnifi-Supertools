@@ -25,7 +25,7 @@ beforeEach(() => {
 describe("/api/health", async () => {
   const { GET } = await import("@/app/api/health/route");
   it("reports registry stats", async () => {
-    const res = GET();
+    const res = await GET();
     const data = await res.json();
     expect(data.ok).toBe(true);
     expect(data.registry.ready).toBeGreaterThan(50);
