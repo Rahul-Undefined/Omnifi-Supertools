@@ -20,12 +20,18 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0 \
     DATA_DIR=/data
-# Video downloader engine: latest yt-dlp (pip) + FFmpeg for merging/transcoding. Node is already present for yt-dlp's JS challenges.
-# Pre-release (nightly) channel: YouTube fixes land there weeks before the stable release.
-RUN apk add --no-cache python3 py3-pip ffmpeg ca-certificates \n    && pip install --no-cache-dir --break-system-packages --upgrade --pre yt-dlp \n    && (pip install --no-cache-dir --break-system-packages curl_cffi || echo "curl_cffi unavailable on this platform") \n    && python3 -m yt_dlp --version && ffmpeg -version | head -n 1
-RUN addgroup -S omnifi && adduser -S -h /home/omnifi omnifi -G omnifi && mkdir -p /data /home/omnifi && chown -R omnifi:omnifi /data /home/omnifi
+# Video downloader engine: yt-dlp (pre-release channel, where YouTube fixes land first) + FFmpeg.
+# Node is already present for yt-dlp's JavaScript challenges.
+RUN apk add --no-cache python3 py3-pip ffmpeg ca-certificates \
+    && pip install --no-cache-dir --break-system-packages --upgrade --pre yt-dlp \
+    && (pip install --no-cache-dir --break-system-packages curl_cffi || echo "curl_cffi unavailable on this platform") \
+    && python3 -m yt_dlp --version \
+    && ffmpeg -version | head -n 1
+RUN addgroup -S omnifi && adduser -S -h /home/omnifi omnifi -G omnifi \
+    && mkdir -p /data /home/omnifi && chown -R omnifi:omnifi /data /home/omnifi
 # The engine is invoked as a module so a newer copy in the user site-packages (refreshed at start) wins over the image copy.
-ENV YTDLP_BIN="python3 -m yt_dlp" \n    HOME=/home/omnifi
+ENV YTDLP_BIN="python3 -m yt_dlp" \
+    HOME=/home/omnifi
 COPY --chown=omnifi:omnifi docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
 COPY --from=build --chown=omnifi:omnifi /app/.next/standalone ./
