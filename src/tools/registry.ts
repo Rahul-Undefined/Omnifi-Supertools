@@ -5,6 +5,8 @@ import { documentTools } from "./definitions/documents";
 import { imageTools } from "./definitions/images";
 import { mediaTools } from "./definitions/media";
 import { officeTools } from "./definitions/office";
+import { powerpointTools } from "./definitions/powerpoint";
+import { wordTools } from "./definitions/word";
 import { financeTools } from "./definitions/finance";
 import { developerTools } from "./definitions/developer";
 import { webTools } from "./definitions/web";
@@ -24,6 +26,8 @@ export const tools: ToolDefinition[] = [
   ...imageTools,
   ...mediaTools,
   ...officeTools,
+  ...powerpointTools,
+  ...wordTools,
   ...financeTools,
   ...developerTools,
   ...webTools,

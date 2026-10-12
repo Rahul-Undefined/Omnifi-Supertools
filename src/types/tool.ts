@@ -3,6 +3,8 @@ export type ToolCategoryId =
   | "images"
   | "media"
   | "office"
+  | "powerpoint"
+  | "word"
   | "finance"
   | "developer"
   | "web"
