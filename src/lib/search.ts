@@ -117,7 +117,6 @@ const EXPAND: Record<string, string[]> = {
   doc: ["docx", "word", "document"],
   document: ["pdf", "docx", "document"],
   documents: ["pdf", "docx", "document"],
-  powerpoint: ["pptx", "powerpoint", "slides"],
   ppt: ["pptx", "powerpoint", "slides"],
   pptx: ["pptx", "powerpoint", "slides"],
   slides: ["pptx", "powerpoint", "slides"],
