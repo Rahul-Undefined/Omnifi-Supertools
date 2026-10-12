@@ -327,20 +327,5 @@ export const mediaTools: ToolDefinition[] = [
     status: "coming-soon",
     runtime: "server",
     icon: "Download",
-  },
-  {
-    id: "video-downloader",
-    name: "Video downloader",
-    category: "media",
-    description: "Paste a video link from YouTube, Facebook, Instagram, X, Vimeo, TikTok, LinkedIn or most other sites and download it in the quality and format you choose (MP4, MKV, WebM, or MP3/M4A audio). Runs on the Omnifi server; the file is deleted right after it reaches you.",
-    keywords: ["video downloader", "youtube", "youtube downloader", "facebook video", "instagram reel", "tiktok", "vimeo", "twitter video", "x video", "download video", "mp4 download", "youtube to mp3", "save video", "linkedin video"],
-    input: [],
-    output: ["mp4", "mkv", "webm", "mp3", "m4a"],
-    processor: "custom.videoDownloader",
-    kind: "custom",
-    status: "ready",
-    runtime: "server",
-    icon: "CloudDownload",
-    related: ["video-converter", "extract-audio", "video-compressor"],
-  },
+  }
 ];

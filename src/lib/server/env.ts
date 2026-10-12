@@ -47,19 +47,6 @@ export const env = {
   /** Web tools */
   webFetchTimeoutMs: Number(str("WEB_FETCH_TIMEOUT_MS", "10000")),
   webMaxBytes: Number(str("WEB_MAX_BYTES", String(2 * 1024 * 1024))),
-  /** Video downloader (yt-dlp + FFmpeg in the Docker image) */
-  ytdlpBin: str("YTDLP_BIN", "yt-dlp"),
-  ffmpegBin: str("FFMPEG_BIN", "ffmpeg"),
-  /** Netscape cookies.txt content (optional) for sites that block anonymous cloud downloads. */
-  ytdlpCookies: str("YTDLP_COOKIES"),
-  /** Path to a cookies.txt on disk (Render "Secret Files"), preferred over the inline variable. */
-  ytdlpCookiesFile: str("YTDLP_COOKIES_FILE", "/etc/secrets/cookies.txt"),
-  /** Optional HTTP/SOCKS proxy used only by the downloader, e.g. a residential proxy. */
-  ytdlpProxy: str("YTDLP_PROXY"),
-  ytdlpExtraArgs: str("YTDLP_EXTRA_ARGS"),
-  videoMaxMb: Number(str("VIDEO_MAX_MB", "1024")),
-  videoTimeoutMs: Number(str("VIDEO_TIMEOUT_MIN", "15")) * 60_000,
-  videoConcurrency: Number(str("VIDEO_CONCURRENCY", "2")),
   /** Rate limits (requests per minute per client) */
   rateAi: Number(str("RATE_LIMIT_AI_PER_MIN", "20")),
   rateWeb: Number(str("RATE_LIMIT_WEB_PER_MIN", "60")),

@@ -18,4 +18,3 @@ export const invoice = interactive("Invoice generator");
 export const tts = interactive("Text to speech");
 export const dictation = interactive("Dictation");
 export const stepsRecorder = interactive("Steps Recorder");
-export const videoDownloader = interactive("Video downloader");

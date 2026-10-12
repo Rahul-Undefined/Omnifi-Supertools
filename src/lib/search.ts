@@ -15,14 +15,6 @@ import type { ToolDefinition } from "@/types/tool";
 /** Common phrasings that should land on a specific tool. */
 const synonyms: Record<string, string[]> = {
   "mp4 to mp3": ["extract-audio"],
-  "youtube": ["video-downloader"],
-  "download video": ["video-downloader"],
-  "download a video": ["video-downloader"],
-  "facebook video": ["video-downloader"],
-  "instagram": ["video-downloader"],
-  "tiktok": ["video-downloader"],
-  "reel": ["video-downloader"],
-  "youtube to mp3": ["video-downloader", "extract-audio"],
   "extract text from a scanned document": ["ocr-pdf"],
   "scanned": ["ocr-pdf"],
   "excel to csv": ["excel-to-csv"],

@@ -33,7 +33,6 @@ export const site = {
     website: "https://www.myomnifi.com/",
     techHub: "https://extropyadvind.sharepoint.com/sites/OmnifiTechHub",
     stepsRecorder: "/downloads/Omnifi-Steps-Recorder.zip",
-    videoHelper: "/downloads/Omnifi-Video-Downloader.zip",
   },
   support: { name: "Rahul Ojha", email: "rahul@myomnifi.com" },
   limits: {

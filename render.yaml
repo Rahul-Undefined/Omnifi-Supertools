@@ -39,11 +39,6 @@ services:
         value: myomnifi.com
       - key: APP_URL
         value: https://omnifi-supertools.onrender.com
-      # Video downloader: optional cookies.txt content / proxy for sites that block cloud IPs (see docs/DEPLOYMENT.md)
-      - key: YTDLP_COOKIES
-        sync: false
-      - key: YTDLP_PROXY
-        sync: false
       # Optional: free PostgreSQL (e.g. Neon) so usage stats and team feedback survive redeploys.
       - key: DATABASE_URL
         sync: false
