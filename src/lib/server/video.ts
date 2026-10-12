@@ -57,7 +57,16 @@ export interface DownloadRequest {
 
 let capability: Promise<{ ok: boolean; version: string; flags: Set<string>; ffmpeg: boolean }> | null = null;
 
-function run(cmd: string, args: string[], timeoutMs = 20000): Promise<{ code: number; out: string; err: string }> {
+/** YTDLP_BIN may be a bare binary ("yt-dlp") or a command with arguments ("python3 -m yt_dlp"). */
+function bin(): { cmd: string; prefix: string[] } {
+  const parts = env.ytdlpBin.trim().split(/\s+/);
+  return { cmd: parts[0], prefix: parts.slice(1) };
+}
+
+function run(cmdline: string, args: string[], timeoutMs = 20000): Promise<{ code: number; out: string; err: string }> {
+  const parts = cmdline.trim().split(/\s+/);
+  const cmd = parts[0];
+  args = [...parts.slice(1), ...args];
   return new Promise((resolve) => {
     execFile(cmd, args, { timeout: timeoutMs, maxBuffer: 32 * 1024 * 1024, env: cleanEnv() }, (error, stdout, stderr) => {
       const code = error && typeof (error as { code?: unknown }).code === "number" ? Number((error as { code: number }).code) : error ? 1 : 0;
@@ -110,9 +119,28 @@ async function checkUrl(input: string): Promise<string> {
   return u.href;
 }
 
+const YOUTUBE_HOSTS = /(^|\.)(youtube\.com|youtu\.be|youtube-nocookie\.com)$/i;
+
+/**
+ * Retry ladder for YouTube. The default web client is the first to break when
+ * YouTube changes something or rate-limits a cloud IP; the TV / Android VR /
+ * iOS clients usually keep working, so each attempt tries a different set.
+ */
+export function clientLadder(url: string): string[][] {
+  if (!YOUTUBE_HOSTS.test(new URL(url).hostname)) return [[]];
+  return [
+    [],
+    ["--extractor-args", "youtube:player_client=tv,android_vr,ios"],
+    ["--extractor-args", "youtube:player_client=web_embedded,mweb,web_safari"],
+  ];
+}
+
+const RETRYABLE = /failed to extract any player response|sign in to confirm|not a bot|http error 403|requested format is not available|unable to download webpage|http error 429|unable to extract/i;
+
 /** Translate yt-dlp's stderr into something a person can act on. */
 export function explainError(stderr: string): { message: string; hint?: string } {
   const s = stderr.toLowerCase();
+  if (s.includes("failed to extract any player response")) return { message: "YouTube is not responding to this server's requests", hint: "YouTube either changed something the engine does not handle yet or is rate-limiting this cloud IP. The engine refreshes itself automatically; try again in a few minutes, or use the Windows helper from the Downloads page, which downloads from your own PC." };
   if (s.includes("sign in to confirm") || s.includes("not a bot") || s.includes("confirm you’re not a bot")) return { message: "YouTube blocked this server (\"sign in to confirm you're not a bot\")", hint: "YouTube rate-limits cloud IP addresses. Use the Windows helper from the Downloads page, which downloads from your own PC, or ask the admin to set YTDLP_COOKIES in Render." };
   if (s.includes("private video") || s.includes("login required") || s.includes("members-only") || s.includes("this video is private")) return { message: "This video is private or needs a signed-in account", hint: "Only public videos can be downloaded here." };
   if (s.includes("unsupported url") || s.includes("no video formats") || s.includes("unable to extract")) return { message: "No downloadable video was found at this address", hint: "Paste the link of the video page itself (not a channel, search page or embedded player)." };
@@ -132,8 +160,12 @@ export async function videoInfo(input: string): Promise<VideoInfo> {
   const url = await checkUrl(input);
   const dir = await mkdtemp(path.join(tmpdir(), "omnifi-video-"));
   try {
-    const args = [...baseArgs(cap.flags), ...(await cookiesFile(dir)), "--dump-single-json", "--skip-download", url];
-    const r = await run(env.ytdlpBin, args, 90_000);
+    const common = [...baseArgs(cap.flags), ...(await cookiesFile(dir)), "--dump-single-json", "--skip-download"];
+    let r = { code: 1, out: "", err: "" };
+    for (const extra of clientLadder(url)) {
+      r = await run(env.ytdlpBin, [...common, ...extra, url], 90_000);
+      if (r.code === 0 || !RETRYABLE.test(r.err)) break;
+    }
     if (r.code !== 0) { const e = explainError(r.err); throw new VideoError(e.message, 400, e.hint); }
     let j: Record<string, unknown>;
     try { j = JSON.parse(r.out); } catch { throw new VideoError("Could not read the video details"); }
@@ -206,10 +238,9 @@ export async function videoDownload(req: DownloadRequest, signal?: AbortSignal):
       if (cap.ffmpeg) args.push("--merge-output-format", container);
       if (container === "mp4") args.push("-S", "res,ext:mp4:m4a");
     }
-    args.push(url);
-
-    await new Promise<void>((resolve, reject) => {
-      const child = spawn(env.ytdlpBin, args, { env: cleanEnv(), stdio: ["ignore", "pipe", "pipe"] });
+    const { cmd, prefix } = bin();
+    const attempt = (extra: string[]) => new Promise<void>((resolve, reject) => {
+      const child = spawn(cmd, [...prefix, ...args, ...extra, url], { env: cleanEnv(), stdio: ["ignore", "pipe", "pipe"] });
       let err = "";
       child.stderr.on("data", (d) => { err += String(d); if (err.length > 64_000) err = err.slice(-32_000); });
       child.stdout.on("data", () => {});
@@ -221,9 +252,14 @@ export async function videoDownload(req: DownloadRequest, signal?: AbortSignal):
         clearTimeout(timer);
         signal?.removeEventListener("abort", onAbort);
         if (code === 0) resolve();
-        else { const e = explainError(err); reject(new VideoError(e.message, 400, e.hint)); }
+        else { const e = explainError(err); reject(Object.assign(new VideoError(e.message, 400, e.hint), { retryable: RETRYABLE.test(err) })); }
       });
     });
+    const ladder = clientLadder(url);
+    for (let i = 0; i < ladder.length; i++) {
+      try { await attempt(ladder[i]); break; }
+      catch (e) { if (i === ladder.length - 1 || !(e as { retryable?: boolean }).retryable || signal?.aborted) throw e; }
+    }
 
     const files = (await readdir(dir)).filter((f) => f !== "cookies.txt" && !f.endsWith(".part") && !f.endsWith(".ytdl"));
     if (!files.length) throw new VideoError("The downloader finished but produced no file", 500, "This usually means the file exceeded the size limit.");
