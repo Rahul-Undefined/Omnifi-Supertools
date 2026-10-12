@@ -84,6 +84,19 @@ After the redeploy the sign-in page shows "Continue with Microsoft". Everyone wi
 
 Named local accounts (username + password) can also be created on the admin page; they persist only when `DATABASE_URL` is set.
 
+## Video downloader
+
+The Docker image installs the latest `yt-dlp` (pip) and FFmpeg, so the Video downloader tool works out of the box on Render. Files are written to a per-request temp folder and deleted once streamed. Limits: `VIDEO_MAX_MB` (1024), `VIDEO_TIMEOUT_MIN` (15), `VIDEO_CONCURRENCY` (2).
+
+YouTube rate-limits cloud IP ranges ("sign in to confirm you're not a bot"). Options, in order of preference:
+
+1. Use the **Windows helper** from the Downloads page: the same engine on the person's own PC, which is not blocked.
+2. Set `YTDLP_COOKIES` in Render to the contents of a `cookies.txt` exported from a browser signed in to a throwaway Google account (Netscape format; newlines may be written as `
+`). Never use a personal account.
+3. Set `YTDLP_PROXY` to a residential proxy URL.
+
+Each redeploy picks up the newest `yt-dlp`; if YouTube changes and downloads start failing, trigger a manual deploy in Render ("Clear build cache & deploy") to rebuild with the latest engine.
+
 ## Behind a reverse proxy / SSO
 
 Put the app behind Azure AD Application Proxy, oauth2-proxy or similar, set `AUTH_MODE=header`, and make sure the proxy **sets** `x-forwarded-email` / `x-forwarded-user` and **strips** any such headers coming from clients. List administrator emails in `AUTH_ADMINS`.

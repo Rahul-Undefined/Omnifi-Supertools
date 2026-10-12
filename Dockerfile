@@ -20,6 +20,8 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0 \
     DATA_DIR=/data
+# Video downloader engine: latest yt-dlp (pip) + FFmpeg for merging/transcoding. Node is already present for yt-dlp's JS challenges.
+RUN apk add --no-cache python3 py3-pip ffmpeg ca-certificates     && pip install --no-cache-dir --break-system-packages --upgrade yt-dlp     && yt-dlp --version && ffmpeg -version | head -n 1
 RUN addgroup -S omnifi && adduser -S omnifi -G omnifi && mkdir -p /data && chown omnifi:omnifi /data
 COPY --from=build --chown=omnifi:omnifi /app/.next/standalone ./
 COPY --from=build --chown=omnifi:omnifi /app/.next/static ./.next/static
