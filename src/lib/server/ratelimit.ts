@@ -1,30 +1,54 @@
 import "server-only";
+import { env } from "./env";
+import { store } from "./store";
 
 /**
- * Sliding-window rate limiter. In-memory per process; good for a single
- * container. For multi-instance deployments swap this for Redis (see
- * docs/DEPLOYMENT.md) keeping the same interface.
+ * Rate limits and daily quotas.
+ * Fixed windows counted in the store: PostgreSQL when DATABASE_URL is set
+ * (shared across instances and restarts), otherwise in this process. The
+ * client key is the signed-in user id when there is one, else the client IP
+ * taken from proxy headers ONLY when TRUST_PROXY_HEADERS is on.
  */
-const buckets = new Map<string, number[]>();
 
-export function rateLimit(key: string, perMinute: number): { ok: boolean; remaining: number; retryAfter: number } {
+export interface LimitResult { ok: boolean; remaining: number; retryAfter: number }
+
+export async function rateLimit(key: string, perMinute: number): Promise<LimitResult> {
+  const windowMs = 60_000;
   const now = Date.now();
-  const windowStart = now - 60_000;
-  const hits = (buckets.get(key) ?? []).filter((t) => t > windowStart);
-  if (hits.length >= perMinute) {
-    buckets.set(key, hits);
-    return { ok: false, remaining: 0, retryAfter: Math.ceil((hits[0] + 60_000 - now) / 1000) };
+  const windowStart = now - (now % windowMs);
+  const count = await store().rateHit(`m:${key}`, windowStart, windowMs);
+  if (count > perMinute) return { ok: false, remaining: 0, retryAfter: Math.max(1, Math.ceil((windowStart + windowMs - now) / 1000)) };
+  return { ok: true, remaining: perMinute - count, retryAfter: 0 };
+}
+
+/** Per-day quota (UTC day), for expensive endpoints such as AI and outbound web fetches. */
+export async function dailyQuota(key: string, perDay: number): Promise<LimitResult> {
+  if (!perDay || perDay <= 0) return { ok: true, remaining: Infinity, retryAfter: 0 };
+  const windowMs = 86_400_000;
+  const now = Date.now();
+  const windowStart = now - (now % windowMs);
+  const count = await store().rateHit(`d:${key}`, windowStart, windowMs);
+  if (count > perDay) return { ok: false, remaining: 0, retryAfter: Math.max(1, Math.ceil((windowStart + windowMs - now) / 1000)) };
+  return { ok: true, remaining: perDay - count, retryAfter: 0 };
+}
+
+/** Client IP: the nearest proxy's entry in X-Forwarded-For when proxies are trusted; otherwise no header is believed. */
+export function clientIp(req: Request): string {
+  if (env.trustProxyHeaders) {
+    const fwd = req.headers.get("x-forwarded-for");
+    if (fwd) {
+      const parts = fwd.split(",").map((s) => s.trim()).filter(Boolean);
+      // Rightmost entry was appended by the trusted proxy in front of us; earlier entries are client-supplied.
+      const ip = parts[parts.length - 1];
+      if (ip && /^[0-9a-f.:]+$/i.test(ip)) return ip;
+    }
+    const real = req.headers.get("x-real-ip");
+    if (real && /^[0-9a-f.:]+$/i.test(real)) return real;
   }
-  hits.push(now);
-  buckets.set(key, hits);
-  if (buckets.size > 10_000) {
-    for (const [k, v] of buckets) if (!v.some((t) => t > windowStart)) buckets.delete(k);
-  }
-  return { ok: true, remaining: perMinute - hits.length, retryAfter: 0 };
+  return "direct";
 }
 
 export function clientKey(req: Request, userId?: string): string {
   if (userId) return `u:${userId}`;
-  const fwd = req.headers.get("x-forwarded-for")?.split(",")[0].trim();
-  return `ip:${fwd || req.headers.get("x-real-ip") || "local"}`;
+  return `ip:${clientIp(req)}`;
 }

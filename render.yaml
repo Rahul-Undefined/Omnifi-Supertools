@@ -23,9 +23,27 @@ services:
       # Paste your key in the Render dashboard (Environment tab); never commit it.
       - key: ANTHROPIC_API_KEY
         sync: false
-      # Admin password for /admin (set in the Render dashboard; the admin page is open to everyone until it is set).
+      # REQUIRED in production: at least one sign-in method must exist (ADMIN_PASSWORD, USERS_JSON, Microsoft,
+      # or header SSO with AUTH_PROXY_SECRET). Without one the app answers 503 instead of running open.
       - key: ADMIN_PASSWORD
         sync: false
+      # Render terminates TLS and sets X-Forwarded-For; trust it for per-IP rate limits.
+      - key: TRUST_PROXY_HEADERS
+        value: "true"
+      # Daily quotas per signed-in user (AI calls, outbound web-tool requests). 0 disables.
+      - key: QUOTA_AI_PER_DAY
+        value: "300"
+      - key: QUOTA_WEB_PER_DAY
+        value: "2000"
+      # Retention (days) for usage telemetry, audit log, team feedback and synced preferences.
+      - key: RETENTION_USAGE_DAYS
+        value: "90"
+      - key: RETENTION_AUDIT_DAYS
+        value: "180"
+      - key: RETENTION_FEEDBACK_DAYS
+        value: "365"
+      - key: RETENTION_PREFS_DAYS
+        value: "365"
       # Microsoft 365 sign-in (Entra ID app registration). See docs/DEPLOYMENT.md.
       - key: AZURE_CLIENT_ID
         sync: false

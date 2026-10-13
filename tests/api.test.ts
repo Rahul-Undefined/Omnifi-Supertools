@@ -12,7 +12,18 @@ vi.mock("next/headers", () => ({
 
 const recordAudit = vi.fn();
 const recordUsage = vi.fn();
-vi.mock("@/lib/server/store", () => ({ store: () => ({ recordAudit, recordUsage, snapshot: async () => ({ usage: [], audit: [], users: {} }), listAccounts: async () => [], getAccount: async () => null, saveAccount: async () => {}, deleteAccount: async () => {}, kind: "mock" }) }));
+const recordFeedback = vi.fn();
+const counters = new Map<string, { start: number; count: number }>();
+vi.mock("@/lib/server/store", () => ({ store: () => ({
+  recordAudit, recordUsage, recordFeedback,
+  listFeedback: async () => [],
+  snapshot: async () => ({ usage: [], audit: [], users: {} }),
+  listAccounts: async () => [], getAccount: async () => null, saveAccount: async () => {}, deleteAccount: async () => {},
+  getPrefs: async () => null, savePrefs: async () => {},
+  rateHit: async (key: string, start: number) => { const c = counters.get(key); const n = c && c.start === start ? c.count + 1 : 1; counters.set(key, { start, count: n }); return n; },
+  purge: async () => ({}),
+  kind: "mock",
+}) }));
 
 const json = (url: string, body: unknown, headers: Record<string, string> = {}) =>
   new Request(`http://localhost${url}`, { method: "POST", headers: { "content-type": "application/json", host: "localhost", ...headers }, body: JSON.stringify(body) });
@@ -24,11 +35,11 @@ beforeEach(() => {
 
 describe("/api/health", async () => {
   const { GET } = await import("@/app/api/health/route");
-  it("reports registry stats", async () => {
+  it("is minimal: liveness only, no implementation details", async () => {
     const res = await GET();
     const data = await res.json();
     expect(data.ok).toBe(true);
-    expect(data.registry.ready).toBeGreaterThan(50);
+    expect(Object.keys(data).sort()).toEqual(["ok", "time"]);
   });
 });
 

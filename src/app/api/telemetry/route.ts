@@ -21,7 +21,7 @@ const schema = z.object({
 export async function POST(req: Request) {
   try {
     const user = await currentUser();
-    if (!rateLimit(clientKey(req, user?.id), 240).ok) return NextResponse.json({ ok: false }, { status: 429 });
+    if (!(await rateLimit(`tel:${clientKey(req, user?.id)}`, 240)).ok) return NextResponse.json({ ok: false }, { status: 429 });
     const parsed = schema.safeParse(await readJson(req, 4096));
     if (!parsed.success || !getTool(parsed.data.tool)) return NextResponse.json({ ok: false }, { status: 400 });
     await store().recordUsage({ at: Date.now(), ...parsed.data, cancelled: parsed.data.cancelled ?? false, user: user?.id });

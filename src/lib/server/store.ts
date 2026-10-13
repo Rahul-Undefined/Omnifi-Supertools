@@ -4,9 +4,14 @@ import path from "node:path";
 import { env } from "./env";
 
 /**
- * Usage + audit store. Uses PostgreSQL when DATABASE_URL is set, otherwise a
- * JSON file under DATA_DIR so the app works with zero infrastructure.
- * Only tool ids, timings and outcomes are stored: never file names or contents.
+ * Usage, audit, feedback, accounts, preferences and rate-limit counters.
+ * PostgreSQL when DATABASE_URL is set, otherwise a JSON file under DATA_DIR
+ * so the app works with zero infrastructure.
+ *
+ * Data minimisation: usage holds tool ids, timings and outcomes only. Audit
+ * holds actor, action and a short technical detail (never document contents,
+ * prompts, passwords or tokens). Feedback text lives in its own collection
+ * with its own retention. Everything is purged after RETENTION_*_DAYS.
  */
 export interface UsageEvent {
   at: number;
@@ -24,6 +29,14 @@ export interface AuditEvent {
   action: string;
   detail?: string;
   ip?: string;
+}
+
+export interface FeedbackItem {
+  at: number;
+  from: string;
+  kind: string;
+  tool: string;
+  message: string;
 }
 
 export interface Account {
@@ -48,14 +61,27 @@ interface Snapshot {
   users: Record<string, number>; // userId -> last seen
   accounts?: Account[];
   prefs?: Record<string, UserPrefs>;
+  feedback?: FeedbackItem[];
+  rates?: Record<string, { start: number; count: number }>;
+  purgedAt?: number;
 }
 
 const MAX_USAGE = 20_000;
 const MAX_AUDIT = 5_000;
+const MAX_FEEDBACK = 2_000;
+const PURGE_EVERY_MS = 60 * 60 * 1000;
+
+export interface Retention { usageDays: number; auditDays: number; feedbackDays: number; prefsDays: number }
+
+export function retentionFromEnv(): Retention {
+  return { usageDays: env.retentionUsageDays, auditDays: env.retentionAuditDays, feedbackDays: env.retentionFeedbackDays, prefsDays: env.retentionPrefsDays };
+}
 
 interface Backend {
   recordUsage(e: UsageEvent): Promise<void>;
   recordAudit(e: AuditEvent): Promise<void>;
+  recordFeedback(f: FeedbackItem): Promise<void>;
+  listFeedback(limit?: number): Promise<FeedbackItem[]>;
   snapshot(): Promise<Snapshot>;
   listAccounts(): Promise<Account[]>;
   getAccount(username: string): Promise<Account | null>;
@@ -63,10 +89,23 @@ interface Backend {
   deleteAccount(username: string): Promise<void>;
   getPrefs(userId: string): Promise<UserPrefs | null>;
   savePrefs(userId: string, prefs: UserPrefs): Promise<void>;
+  /** Increment a fixed-window counter and return the new count. */
+  rateHit(key: string, windowStart: number, windowMs: number): Promise<number>;
+  /** Delete records older than the retention periods. Returns counts removed. */
+  purge(r: Retention, now?: number): Promise<Record<string, number>>;
   kind: string;
 }
 
-/* ---------- JSON file backend ---------- */
+/** Shared throttle so purge runs at most hourly per process. */
+let lastPurge = 0;
+async function maybePurge(b: Backend) {
+  const now = Date.now();
+  if (now - lastPurge < PURGE_EVERY_MS) return;
+  lastPurge = now;
+  try { await b.purge(retentionFromEnv(), now); } catch (e) { console.error("retention purge failed", e instanceof Error ? e.message : String(e)); }
+}
+
+/* ---------- JSON file backend (also the in-memory fallback for counters) ---------- */
 class FileBackend implements Backend {
   kind = "file";
   private file = path.join(process.cwd(), env.dataDir, "store.json");
@@ -85,8 +124,10 @@ class FileBackend implements Backend {
   private flush() {
     this.writing = this.writing.then(async () => {
       await mkdir(path.dirname(this.file), { recursive: true });
-      await writeFile(this.file, JSON.stringify(this.data));
-    }).catch((e) => console.error("store flush failed", e));
+      const { rates, ...persisted } = this.data!; // counters are process-local
+      void rates;
+      await writeFile(this.file, JSON.stringify(persisted));
+    }).catch((e) => console.error("store flush failed", e instanceof Error ? e.message : String(e)));
   }
   async recordUsage(e: UsageEvent) {
     const d = await this.load();
@@ -94,6 +135,7 @@ class FileBackend implements Backend {
     if (d.usage.length > MAX_USAGE) d.usage.splice(0, d.usage.length - MAX_USAGE);
     if (e.user) d.users[e.user] = e.at;
     this.flush();
+    void maybePurge(this);
   }
   async recordAudit(e: AuditEvent) {
     const d = await this.load();
@@ -101,9 +143,20 @@ class FileBackend implements Backend {
     if (d.audit.length > MAX_AUDIT) d.audit.splice(0, d.audit.length - MAX_AUDIT);
     if (e.actor) d.users[e.actor] = e.at;
     this.flush();
+    void maybePurge(this);
+  }
+  async recordFeedback(f: FeedbackItem) {
+    const d = await this.load();
+    d.feedback = [...(d.feedback ?? []), f].slice(-MAX_FEEDBACK);
+    this.flush();
+  }
+  async listFeedback(limit = 200) {
+    return [...((await this.load()).feedback ?? [])].sort((a, b) => b.at - a.at).slice(0, limit);
   }
   async snapshot() {
-    return structuredClone(await this.load());
+    const { rates, ...rest } = await this.load();
+    void rates;
+    return structuredClone(rest);
   }
   async listAccounts() {
     return [...((await this.load()).accounts ?? [])];
@@ -129,6 +182,31 @@ class FileBackend implements Backend {
     d.prefs = { ...(d.prefs ?? {}), [userId]: prefs };
     this.flush();
   }
+  async rateHit(key: string, windowStart: number, windowMs: number) {
+    const d = await this.load();
+    d.rates ??= {};
+    const cur = d.rates[key];
+    const next = cur && cur.start === windowStart ? { start: windowStart, count: cur.count + 1 } : { start: windowStart, count: 1 };
+    d.rates[key] = next;
+    if (Object.keys(d.rates).length > 20_000) {
+      const now = Date.now();
+      for (const [k, v] of Object.entries(d.rates)) if (v.start + windowMs * 2 < now) delete d.rates[k];
+    }
+    return next.count;
+  }
+  async purge(r: Retention, now = Date.now()) {
+    const d = await this.load();
+    const cut = (days: number) => now - days * 86_400_000;
+    const before = { usage: d.usage.length, audit: d.audit.length, feedback: (d.feedback ?? []).length, prefs: Object.keys(d.prefs ?? {}).length };
+    d.usage = d.usage.filter((u) => u.at >= cut(r.usageDays));
+    d.audit = d.audit.filter((a) => a.at >= cut(r.auditDays));
+    d.feedback = (d.feedback ?? []).filter((f) => f.at >= cut(r.feedbackDays));
+    d.prefs = Object.fromEntries(Object.entries(d.prefs ?? {}).filter(([, p]) => p.updatedAt >= cut(r.prefsDays)));
+    for (const [u, seen] of Object.entries(d.users)) if (seen < cut(r.auditDays)) delete d.users[u];
+    d.purgedAt = now;
+    this.flush();
+    return { usage: before.usage - d.usage.length, audit: before.audit - d.audit.length, feedback: before.feedback - d.feedback.length, prefs: before.prefs - Object.keys(d.prefs).length };
+  }
 }
 
 /* ---------- PostgreSQL backend ---------- */
@@ -146,9 +224,12 @@ class PgBackend implements Backend {
           CREATE TABLE IF NOT EXISTS usage_events (id BIGSERIAL PRIMARY KEY, at TIMESTAMPTZ NOT NULL, tool TEXT NOT NULL, ok BOOLEAN NOT NULL, ms INTEGER NOT NULL, files INTEGER NOT NULL DEFAULT 0, cancelled BOOLEAN NOT NULL DEFAULT FALSE, user_id TEXT);
           CREATE INDEX IF NOT EXISTS usage_events_at ON usage_events (at);
           CREATE TABLE IF NOT EXISTS audit_events (id BIGSERIAL PRIMARY KEY, at TIMESTAMPTZ NOT NULL, actor TEXT NOT NULL, action TEXT NOT NULL, detail TEXT, ip TEXT);
+          CREATE INDEX IF NOT EXISTS audit_events_at ON audit_events (at);
+          CREATE TABLE IF NOT EXISTS feedback (id BIGSERIAL PRIMARY KEY, at TIMESTAMPTZ NOT NULL, from_id TEXT NOT NULL, kind TEXT NOT NULL, tool TEXT NOT NULL DEFAULT '', message TEXT NOT NULL);
           CREATE TABLE IF NOT EXISTS users_seen (user_id TEXT PRIMARY KEY, last_seen TIMESTAMPTZ NOT NULL);
           CREATE TABLE IF NOT EXISTS accounts (username TEXT PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, role TEXT NOT NULL, password_hash TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL);
           CREATE TABLE IF NOT EXISTS user_prefs (user_id TEXT PRIMARY KEY, data JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL);
+          CREATE TABLE IF NOT EXISTS rate_limits (key TEXT PRIMARY KEY, window_start BIGINT NOT NULL, count INTEGER NOT NULL);
         `);
       })();
     }
@@ -159,11 +240,22 @@ class PgBackend implements Backend {
     const p = await this.init();
     await p.query("INSERT INTO usage_events (at, tool, ok, ms, files, cancelled, user_id) VALUES (to_timestamp($1/1000.0),$2,$3,$4,$5,$6,$7)", [e.at, e.tool, e.ok, e.ms, e.files, e.cancelled, e.user ?? null]);
     if (e.user) await p.query("INSERT INTO users_seen (user_id, last_seen) VALUES ($1, to_timestamp($2/1000.0)) ON CONFLICT (user_id) DO UPDATE SET last_seen = EXCLUDED.last_seen", [e.user, e.at]);
+    void maybePurge(this);
   }
   async recordAudit(e: AuditEvent) {
     const p = await this.init();
     await p.query("INSERT INTO audit_events (at, actor, action, detail, ip) VALUES (to_timestamp($1/1000.0),$2,$3,$4,$5)", [e.at, e.actor, e.action, e.detail ?? null, e.ip ?? null]);
     if (e.actor) await p.query("INSERT INTO users_seen (user_id, last_seen) VALUES ($1, to_timestamp($2/1000.0)) ON CONFLICT (user_id) DO UPDATE SET last_seen = EXCLUDED.last_seen", [e.actor, e.at]);
+    void maybePurge(this);
+  }
+  async recordFeedback(f: FeedbackItem) {
+    const p = await this.init();
+    await p.query("INSERT INTO feedback (at, from_id, kind, tool, message) VALUES (to_timestamp($1/1000.0),$2,$3,$4,$5)", [f.at, f.from, f.kind, f.tool, f.message]);
+  }
+  async listFeedback(limit = 200) {
+    const p = await this.init();
+    const r = await p.query("SELECT extract(epoch from at)*1000 AS at, from_id, kind, tool, message FROM feedback ORDER BY at DESC LIMIT $1", [limit]);
+    return r.rows.map((x) => ({ at: Number(x.at), from: x.from_id, kind: x.kind, tool: x.tool, message: x.message }));
   }
   async snapshot(): Promise<Snapshot> {
     const p = await this.init();
@@ -200,6 +292,26 @@ class PgBackend implements Backend {
   async savePrefs(userId: string, prefs: UserPrefs) {
     const p = await this.init();
     await p.query("INSERT INTO user_prefs (user_id, data, updated_at) VALUES ($1, $2, to_timestamp($3/1000.0)) ON CONFLICT (user_id) DO UPDATE SET data = EXCLUDED.data, updated_at = EXCLUDED.updated_at", [userId, JSON.stringify(prefs), prefs.updatedAt]);
+  }
+  async rateHit(key: string, windowStart: number, windowMs: number) {
+    const p = await this.init();
+    const r = await p.query(
+      "INSERT INTO rate_limits (key, window_start, count) VALUES ($1, $2, 1) ON CONFLICT (key) DO UPDATE SET count = CASE WHEN rate_limits.window_start = EXCLUDED.window_start THEN rate_limits.count + 1 ELSE 1 END, window_start = EXCLUDED.window_start RETURNING count",
+      [key, windowStart],
+    );
+    if (Math.random() < 0.01) await p.query("DELETE FROM rate_limits WHERE window_start < $1", [Date.now() - windowMs * 2]);
+    return Number(r.rows[0].count);
+  }
+  async purge(r: Retention, now = Date.now()) {
+    const p = await this.init();
+    const ts = (days: number) => new Date(now - days * 86_400_000).toISOString();
+    const u = await p.query("DELETE FROM usage_events WHERE at < $1", [ts(r.usageDays)]);
+    const a = await p.query("DELETE FROM audit_events WHERE at < $1", [ts(r.auditDays)]);
+    const f = await p.query("DELETE FROM feedback WHERE at < $1", [ts(r.feedbackDays)]);
+    const pr = await p.query("DELETE FROM user_prefs WHERE updated_at < $1", [ts(r.prefsDays)]);
+    await p.query("DELETE FROM users_seen WHERE last_seen < $1", [ts(r.auditDays)]);
+    await p.query("DELETE FROM rate_limits WHERE window_start < $1", [now - 2 * 86_400_000]);
+    return { usage: u.rowCount ?? 0, audit: a.rowCount ?? 0, feedback: f.rowCount ?? 0, prefs: pr.rowCount ?? 0 };
   }
 }
 

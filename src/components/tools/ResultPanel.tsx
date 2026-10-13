@@ -1,11 +1,12 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, Copy, Download, RotateCcw, AlertTriangle, Package } from "lucide-react";
 import type { ProcessorFile, ProcessorOutput } from "@/types/processor";
 import { Button } from "@/components/ui/Button";
 import { downloadBlob } from "@/lib/files";
 import { formatBytes } from "@/lib/utils";
 import { zipFiles } from "@/processors/shared/zip";
+import { sanitizeHtml, previewDocument } from "@/lib/sanitize";
 
 interface Props {
   output: ProcessorOutput;
@@ -95,7 +96,7 @@ export function ResultPanel({ output, onReset, title = "Done", htmlPreview }: Pr
               </table>
             </div>
           ) : htmlPreview ? (
-            <div className="prose-omnifi max-h-[32rem] overflow-auto rounded-control border border-border bg-surface p-5 scrollbar-thin" dangerouslySetInnerHTML={{ __html: sanitize(output.text) }} />
+            <HtmlPreview html={output.text} />
           ) : (
             <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap break-words rounded-control border border-border bg-surface p-4 font-mono text-[13px] leading-relaxed text-body scrollbar-thin">{output.text}</pre>
           )}
@@ -118,12 +119,22 @@ function Preview({ file }: { file: ProcessorFile }) {
   return <img src={url} alt={file.name} className="aspect-square w-full rounded-control-sm border border-border object-cover bg-surface" onLoad={() => setTimeout(() => URL.revokeObjectURL(url), 60_000)} />;
 }
 
-/** Strip scripts and inline handlers from rendered HTML previews. */
-function sanitize(html: string): string {
-  return html
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
-    .replace(/ on\w+="[^"]*"/gi, "")
-    .replace(/ on\w+='[^']*'/gi, "")
-    .replace(/javascript:/gi, "");
+/**
+ * Rendered HTML (Markdown preview etc.) goes through DOMPurify's allowlist and
+ * is then displayed in a sandboxed iframe with no scripts, no same-origin
+ * access and its own restrictive CSP. Even a sanitiser bypass cannot touch the
+ * app's cookies, storage or DOM.
+ */
+function HtmlPreview({ html }: { html: string }) {
+  const [doc, setDoc] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    import("dompurify").then((m) => {
+      if (cancelled) return;
+      setDoc(previewDocument(sanitizeHtml(html, m.default)));
+    });
+    return () => { cancelled = true; };
+  }, [html]);
+  if (doc == null) return <div className="h-40 animate-pulse rounded-control bg-surface-2" />;
+  return <iframe title="Preview" sandbox="" srcDoc={doc} referrerPolicy="no-referrer" className="h-[32rem] w-full rounded-control border border-border bg-surface" />;
 }

@@ -30,7 +30,7 @@ export async function PUT(req: Request) {
     if (!isSameOrigin(req)) return jsonError("Cross-origin requests are not allowed", 403);
     const user = await currentUser();
     if (!user) return new NextResponse(null, { status: 204 });
-    if (!rateLimit(`prefs:${clientKey(req, user.id)}`, 60).ok) return jsonError("Too many updates", 429);
+    if (!(await rateLimit(`prefs:${clientKey(req, user.id)}`, 60)).ok) return jsonError("Too many updates", 429);
     const parsed = schema.safeParse(await readJson(req, 64 * 1024));
     if (!parsed.success) return jsonError("Invalid preferences", 400);
     const prefs = { favorites: [...new Set(parsed.data.favorites)], recent: parsed.data.recent.slice(0, 30), updatedAt: Date.now() };

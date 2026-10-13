@@ -97,10 +97,10 @@ describe("server security primitives", () => {
     expect(() => parseTarget("not a url at all")).toThrow(/valid URL/);
     expect(parseTarget("example.com/path").href).toBe("https://example.com/path");
   });
-  it("rate limits per key", () => {
+  it("rate limits per key", async () => {
     const key = `test-${Math.random()}`;
-    for (let i = 0; i < 3; i++) expect(rateLimit(key, 3).ok).toBe(true);
-    const blocked = rateLimit(key, 3);
+    for (let i = 0; i < 3; i++) expect((await rateLimit(key, 3)).ok).toBe(true);
+    const blocked = await rateLimit(key, 3);
     expect(blocked.ok).toBe(false);
     expect(blocked.retryAfter).toBeGreaterThan(0);
   });

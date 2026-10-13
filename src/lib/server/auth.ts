@@ -49,13 +49,36 @@ export async function destroySession(): Promise<void> {
   jar.delete(CSRF_COOKIE);
 }
 
-/** Resolve the current user: header-based SSO first (if enabled), then the signed cookie. */
+/** Header SSO is usable only when a 32+ char shared secret is configured; otherwise it fails closed. */
+export function headerAuthConfigured(): boolean {
+  return env.authMode === "header" && env.authProxySecret.length >= 32;
+}
+
+export const PROXY_SECRET_HEADER = "x-omnifi-proxy-secret";
+
+/** Constant-time check that the request came through the trusted proxy. */
+export function proxySecretMatches(value: string | null | undefined): boolean {
+  if (!headerAuthConfigured() || !value) return false;
+  const a = createHash("sha256").update(value).digest();
+  const b = createHash("sha256").update(env.authProxySecret).digest();
+  return timingSafeEqual(a, b);
+}
+
+/** Identity asserted by a trusted reverse proxy, or null. Never trusts the identity headers on their own. */
+export function userFromProxyHeaders(h: Headers): User | null {
+  if (!headerAuthConfigured()) return null;
+  if (!proxySecretMatches(h.get(PROXY_SECRET_HEADER))) return null;
+  const email = h.get(env.headerEmail)?.trim().toLowerCase();
+  if (!email || !/^[^@\s]+@[^@\s]+$/.test(email)) return null;
+  const name = h.get(env.headerUser)?.trim() || email;
+  return { id: email, name, email, role: env.headerAdmins.includes(email) ? "admin" : "user", via: "header" };
+}
+
+/** Resolve the current user: trusted-proxy SSO first (if enabled), then the signed cookie. */
 export async function currentUser(): Promise<User | null> {
   if (env.authMode === "header") {
-    const h = await headers();
-    const email = h.get(env.headerEmail)?.toLowerCase();
-    const name = h.get(env.headerUser) ?? email;
-    if (email) return { id: email, name: name ?? email, email, role: env.headerAdmins.includes(email) ? "admin" : "user", via: "header" };
+    const fromProxy = userFromProxyHeaders(await headers());
+    if (fromProxy) return fromProxy;
   }
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
@@ -79,17 +102,24 @@ export function localAuthConfigured(): boolean {
   return Boolean(env.adminPassword) || envUsers().length > 0;
 }
 
-/** Sign-in is required for the whole site as soon as any sign-in method exists. */
+/** Sign-in is required for the whole site as soon as any sign-in method exists, and ALWAYS in production. */
 export function authRequired(): boolean {
-  return env.authMode === "header" || microsoftConfigured() || localAuthConfigured();
+  return env.isProd || env.authMode === "header" || microsoftConfigured() || localAuthConfigured();
 }
 
-/** "Open" mode: nothing configured at all (fresh local dev). Admin pages are readable by everyone. */
+/** True when sign-in is required but no usable method exists (production without accounts, or header mode without its secret): everything fails closed. */
+export function authMisconfigured(): boolean {
+  if (env.authMode === "header" && !headerAuthConfigured()) return true;
+  return env.isProd && !(microsoftConfigured() || localAuthConfigured() || headerAuthConfigured());
+}
+
+/** "Open" mode: nothing configured at all in development. Never in production. */
 export function adminOpen(): boolean {
   return !authRequired();
 }
 
 export async function requireUser(): Promise<User> {
+  if (authMisconfigured()) throw new AuthError(503);
   const u = await currentUser();
   if (u) return u;
   if (!authRequired()) return { id: "anonymous", name: "Guest", email: "", role: "admin", via: "local" };
@@ -97,6 +127,7 @@ export async function requireUser(): Promise<User> {
 }
 
 export async function requireAdmin(): Promise<User> {
+  if (authMisconfigured()) throw new AuthError(503);
   const u = await currentUser();
   if (u?.role === "admin") return u;
   if (adminOpen()) return { id: "anonymous", name: "Anyone (open mode)", email: "", role: "admin", via: "local" };
@@ -104,8 +135,8 @@ export async function requireAdmin(): Promise<User> {
 }
 
 export class AuthError extends Error {
-  constructor(public status: 401 | 403) {
-    super(status === 401 ? "Sign in required" : "Admin access required");
+  constructor(public status: 401 | 403 | 503) {
+    super(status === 401 ? "Sign in required" : status === 403 ? "Admin access required" : "Sign-in is not configured on this server");
   }
 }
 

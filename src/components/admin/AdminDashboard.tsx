@@ -11,7 +11,8 @@ interface Stats {
   popular: { id: string; name: string; runs: number; failed: number; avgMs: number }[];
   failedJobs: { at: number; tool: string; ms: number }[];
   audit: { at: number; actor: string; action: string; detail?: string }[];
-  system: { uptimeSeconds: number; memoryMb: number; node: string; storage: string; storageBytes: number; ai: { configured: boolean; provider?: string; model?: string }; authMode: string; queue: string };
+  feedback?: { at: number; from: string; kind: string; tool: string; message: string }[];
+  system: { uptimeSeconds: number; memoryMb: number; storage: string; storageBytes: number; ai: { configured: boolean; provider?: string; model?: string }; authMode: string; trustProxyHeaders?: boolean; retentionDays?: { usage: number; audit: number; feedback: number; prefs: number }; queue: string };
   registry: { total: number; ready: number; comingSoon: number; categories: number };
   featureFlags: Record<string, boolean>;
 }
@@ -87,7 +88,7 @@ export function AdminDashboard() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Kpi label="Uptime" value={uptime} />
           <Kpi label="Memory (RSS)" value={`${s.system.memoryMb} MB`} />
-          <Kpi label="Node" value={s.system.node} />
+          <Kpi label="Retention (audit days)" value={s.system.retentionDays?.audit ?? 0} />
           <Kpi label="Storage" value={`${s.system.storage} · ${formatBytes(s.system.storageBytes)}`} />
           <Kpi label="Queue" value={s.system.queue} small />
           <Kpi label="Auth mode" value={s.system.authMode} />
@@ -106,7 +107,7 @@ export function AdminDashboard() {
 
       <section>
         <H2>Team feedback</H2>
-        <Table head={["When", "From", "Type", "Message"]} rows={s.audit.filter((a) => a.action.startsWith("feedback.")).map((a) => [new Date(a.at).toLocaleString(), a.actor, a.action.replace("feedback.", ""), a.detail ?? ""])} empty="No feedback yet. Share the /feedback link with the team." />
+        <Table head={["When", "From", "Type", "Tool", "Message"]} rows={(s.feedback ?? []).map((f) => [new Date(f.at).toLocaleString(), f.from, f.kind, f.tool, f.message])} empty="No feedback yet. Share the /feedback link with the team." />
       </section>
 
       <section>

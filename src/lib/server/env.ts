@@ -19,6 +19,10 @@ export const env = {
   headerUser: str("AUTH_HEADER_USER", "x-forwarded-user"),
   headerEmail: str("AUTH_HEADER_EMAIL", "x-forwarded-email"),
   headerAdmins: str("AUTH_ADMINS", "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean),
+  /** Header SSO is only honoured when the proxy also sends this shared secret in X-Omnifi-Proxy-Secret (32+ chars). */
+  authProxySecret: str("AUTH_PROXY_SECRET"),
+  /** Believe X-Forwarded-For / X-Real-IP (for rate limiting). Only behind a proxy you control, e.g. Render. */
+  trustProxyHeaders: ["1", "true", "yes", "render"].includes(str("TRUST_PROXY_HEADERS", "").toLowerCase()),
   adminUser: str("ADMIN_USER", "admin"),
   adminPassword: str("ADMIN_PASSWORD"),
   usersJson: str("USERS_JSON"),
@@ -51,6 +55,14 @@ export const env = {
   rateAi: Number(str("RATE_LIMIT_AI_PER_MIN", "20")),
   rateWeb: Number(str("RATE_LIMIT_WEB_PER_MIN", "60")),
   rateAuth: Number(str("RATE_LIMIT_AUTH_PER_MIN", "10")),
+  /** Daily quotas per user (or per client IP when anonymous). 0 disables. */
+  quotaAiPerDay: Number(str("QUOTA_AI_PER_DAY", "300")),
+  quotaWebPerDay: Number(str("QUOTA_WEB_PER_DAY", "2000")),
+  /** Retention in days; records older than this are purged automatically. */
+  retentionUsageDays: Number(str("RETENTION_USAGE_DAYS", "90")),
+  retentionAuditDays: Number(str("RETENTION_AUDIT_DAYS", "180")),
+  retentionFeedbackDays: Number(str("RETENTION_FEEDBACK_DAYS", "365")),
+  retentionPrefsDays: Number(str("RETENTION_PREFS_DAYS", "365")),
 };
 
 export function requireSessionSecret(): string {

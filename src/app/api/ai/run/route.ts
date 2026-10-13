@@ -3,9 +3,9 @@ import { z } from "zod";
 import { complete } from "@/lib/server/ai";
 import { tasks } from "@/lib/server/ai-tasks";
 import { env } from "@/lib/server/env";
-import { currentUser, isSameOrigin } from "@/lib/server/auth";
+import { requireUser, isSameOrigin } from "@/lib/server/auth";
 import { store } from "@/lib/server/store";
-import { rateLimit, clientKey } from "@/lib/server/ratelimit";
+import { rateLimit, dailyQuota, clientKey } from "@/lib/server/ratelimit";
 import { handleError, jsonError, readJson } from "@/lib/server/api";
 
 const schema = z.object({
@@ -17,9 +17,12 @@ const schema = z.object({
 export async function POST(req: Request) {
   try {
     if (!isSameOrigin(req)) return jsonError("Cross-origin requests are not allowed", 403);
-    const user = await currentUser();
-    const rl = rateLimit(clientKey(req, user?.id), env.rateAi);
+    const user = await requireUser();
+    const key = clientKey(req, user.id);
+    const rl = await rateLimit(`ai:${key}`, env.rateAi);
     if (!rl.ok) return NextResponse.json({ error: "Too many AI requests. Slow down.", hint: `Try again in ${rl.retryAfter}s.` }, { status: 429, headers: { "retry-after": String(rl.retryAfter) } });
+    const q = await dailyQuota(`ai:${key}`, env.quotaAiPerDay);
+    if (!q.ok) return NextResponse.json({ error: "Daily AI quota reached", hint: `Up to ${env.quotaAiPerDay} AI requests per day. Resets at midnight UTC.` }, { status: 429, headers: { "retry-after": String(q.retryAfter) } });
     const parsed = schema.safeParse(await readJson(req, 2 * 1024 * 1024));
     if (!parsed.success) return jsonError("Invalid request", 400, parsed.error.issues[0]?.message);
     const { task, options } = parsed.data;
@@ -32,7 +35,7 @@ export async function POST(req: Request) {
     const spec = tasks[task];
     const started = Date.now();
     const result = await complete(spec.system, spec.build(input, options), { json: spec.json, maxTokens: spec.maxTokens });
-    await store().recordAudit({ at: Date.now(), actor: user?.id ?? "anonymous", action: `ai.${task}`, detail: `${input.length} chars, ${Date.now() - started} ms` });
+    await store().recordAudit({ at: Date.now(), actor: user.id, action: `ai.${task}`, detail: `${input.length} chars, ${Date.now() - started} ms` });
     return NextResponse.json({ ...result, text: truncated ? `${result.text}\n\n[Input was truncated to ${env.aiMaxInputChars.toLocaleString()} characters]` : result.text });
   } catch (e) {
     return handleError(e);

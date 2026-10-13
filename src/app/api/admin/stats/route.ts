@@ -45,7 +45,8 @@ export async function GET() {
       popular,
       failedJobs,
       audit: snap.audit.slice(-200).reverse(),
-      system: { uptimeSeconds: Math.round(process.uptime()), memoryMb: Math.round(process.memoryUsage().rss / 1048576), node: process.version, storage: store().kind, storageBytes, ai: aiStatus(), authMode: env.authMode, queue: "inline (browser-side processing; no server queue configured)" },
+      feedback: await store().listFeedback(100),
+      system: { uptimeSeconds: Math.round(process.uptime()), memoryMb: Math.round(process.memoryUsage().rss / 1048576), storage: store().kind, storageBytes, ai: aiStatus(), authMode: env.authMode, trustProxyHeaders: env.trustProxyHeaders, retentionDays: { usage: env.retentionUsageDays, audit: env.retentionAuditDays, feedback: env.retentionFeedbackDays, prefs: env.retentionPrefsDays }, queue: "inline (browser-side processing; no server queue configured)" },
       registry: registryStats(),
       featureFlags: { ai: aiStatus().configured, serverConverters: false, mediaDownloader: false, postgres: Boolean(env.databaseUrl) },
     });
