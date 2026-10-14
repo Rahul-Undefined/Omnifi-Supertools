@@ -26,6 +26,7 @@ export default function HelpPage() {
         <p><strong className="text-foreground">Server tools</strong> are marked with a “Server” badge. Input is sent to the Omnifi server, processed in a temporary location, and deleted as soon as the result is returned. Only the tool name, timing and success/failure are recorded for usage statistics, never file contents or names.</p>
         <p><strong className="text-foreground">AI tools</strong> send your text to the AI provider configured by an administrator. Check the AI page to see which provider is active.</p>
         <p><strong className="text-foreground">Coming soon</strong> tools are listed so you know what is planned. They never pretend to run.</p>
+        <p>The full picture of protection layers, data retention and hosting is on the <a href="/trust" className="text-accent underline">Security &amp; privacy</a> page.</p>
       </section>
       <section className="mt-8 rounded-control border border-border bg-surface p-6 space-y-3 text-sm text-body">
         <h2 className="text-lg font-semibold text-foreground">Tips<span className="brand-dot">.</span></h2>

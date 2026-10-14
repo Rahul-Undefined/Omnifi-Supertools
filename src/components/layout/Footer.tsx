@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ExternalLink, Mail } from "lucide-react";
+import { ExternalLink, Mail, ShieldCheck } from "lucide-react";
 import { Logo } from "./Logo";
 import { site } from "@/config/site";
 import { registryStats } from "@/tools/registry";
@@ -16,7 +16,7 @@ export function Footer() {
             Visit the Omnifi website <ExternalLink className="h-3.5 w-3.5" aria-hidden />
           </a>
         </div>
-        <FooterCol title="Product" links={[["/tools", "All tools"], ["/workflows", "Workflows"], ["/ai", "AI tools"], ["/help", "Help & shortcuts"], ["/feedback", "Share an idea"]]} />
+        <FooterCol title="Product" links={[["/tools", "All tools"], ["/workflows", "Workflows"], ["/ai", "AI tools"], ["/help", "Help & shortcuts"], ["/trust", "Security & privacy"], ["/feedback", "Share an idea"]]} />
         <FooterCol title="You" links={[["/favorites", "Favorites"], ["/recent", "Recently used"], ["/downloads", "Downloads"]]} />
         <div>
           <h3 className="text-sm font-semibold text-foreground">Omnifi</h3>
@@ -42,7 +42,7 @@ export function Footer() {
             <Mail className="h-3.5 w-3.5" aria-hidden />
             Any issue or idea? Contact {site.support.name} at <a href={`mailto:${site.support.email}`} className="font-medium text-body hover:text-accent">{site.support.email}</a>
           </span>
-          <span>Uploaded files for server-side tools are deleted automatically after processing.</span>
+          <Link href="/trust" className="inline-flex items-center gap-1.5 hover:text-accent"><ShieldCheck className="h-3.5 w-3.5" aria-hidden /> Your files stay in your browser. Read how the portal is protected.</Link>
         </div>
       </div>
     </footer>
