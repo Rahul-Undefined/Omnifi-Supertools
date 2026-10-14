@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ShieldCheck, Laptop, Server, Lock, EyeOff, Clock, Globe, KeyRound, AlertTriangle, FileCheck2, Mail } from "lucide-react";
+import { Laptop, Server, Lock, EyeOff, Clock, Globe, KeyRound, AlertTriangle, FileCheck2, Mail } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { site } from "@/config/site";
 
@@ -27,8 +27,8 @@ export default function TrustPage() {
         <Section icon={<Laptop className="h-5 w-5" />} title="1. How the portal works">
           <p>SuperTools is a web app the Omnifi team opens in a browser. It is hosted on Render (a cloud platform) from a private GitHub repository that holds only code, never documents. When you open a tool such as Merge PDF, Excel consolidator or PPTX merger, the engine for that tool (PDF, spreadsheet, image, Office, OCR and video engines) is downloaded <em>to your browser</em> once and runs there as WebAssembly.</p>
           <ul>
-            <li><strong>Browser tools (over 95% of the catalogue)</strong>: the file is read from your disk into the browser tab's memory, processed there, and the result is offered as a download. Close the tab and it is gone. No network request carries the file.</li>
-            <li><strong>Server tools</strong> are marked with a "Server" badge on the tool page. They are: AI tools (your pasted text goes to the configured AI provider through the Omnifi server), web look-ups (only the URL you typed goes to the server), link checkers (only the links found in your file are checked), and the live exchange-rate feed.</li>
+            <li><strong>Browser tools (over 95% of the catalogue)</strong>: the file is read from your disk into the browser tab&apos;s memory, processed there, and the result is offered as a download. Close the tab and it is gone. No network request carries the file.</li>
+            <li><strong>Server tools</strong> are marked with a &quot;Server&quot; badge on the tool page. They are: AI tools (your pasted text goes to the configured AI provider through the Omnifi server), web look-ups (only the URL you typed goes to the server), link checkers (only the links found in your file are checked), and the live exchange-rate feed.</li>
             <li><strong>Desktop helpers</strong> on the Downloads page (Steps Recorder) run entirely on your PC and send nothing anywhere.</li>
           </ul>
         </Section>
@@ -51,9 +51,9 @@ export default function TrustPage() {
 
         <Section icon={<Lock className="h-5 w-5" />} title="3. Protection layers">
           <ol>
-            <li><strong>Sign-in on everything.</strong> Every page and every API requires a signed-in Omnifi account (Microsoft 365 or a named account created by an admin). The server refuses to run "open": if no sign-in method is configured it answers "not available" instead of exposing tools.</li>
+            <li><strong>Sign-in on everything.</strong> Every page and every API requires a signed-in Omnifi account (Microsoft 365 or a named account created by an admin). The server refuses to run &quot;open&quot;: if no sign-in method is configured it answers &quot;not available&quot; instead of exposing tools.</li>
             <li><strong>Encrypted transport.</strong> HTTPS everywhere with HSTS, so browsers never fall back to plain HTTP.</li>
-            <li><strong>Session security.</strong> Sessions are signed tokens in HttpOnly, SameSite cookies; "keep me signed in" lasts 30 days, otherwise the session ends when the browser closes. Passwords are stored as salted scrypt hashes.</li>
+            <li><strong>Session security.</strong> Sessions are signed tokens in HttpOnly, SameSite cookies; &quot;keep me signed in&quot; lasts 30 days, otherwise the session ends when the browser closes. Passwords are stored as salted scrypt hashes.</li>
             <li><strong>Roles.</strong> Admin pages and admin APIs are limited to the admin role, checked on the server for every request.</li>
             <li><strong>Browser hardening.</strong> A strict Content Security Policy (no third-party scripts, no third-party connections, no framing by other sites), plus anti-sniffing, referrer and permissions policies on every response.</li>
             <li><strong>Safe previews.</strong> Anything the portal renders as HTML (for example a Markdown preview) is cleaned with an allowlist sanitiser and shown inside an isolated, script-free frame.</li>
@@ -69,15 +69,15 @@ export default function TrustPage() {
         </Section>
 
         <Section icon={<Globe className="h-5 w-5" />} title="5. Hosting and infrastructure certifications">
-          <p>The app runs as a single container on Render (render.com) in the United States, on infrastructure provided by Amazon Web Services and Google Cloud. Each deployment is built from the GitHub repository; the container runs as a non-privileged user and holds no documents. Secrets (session key, AI key, sign-in configuration) are set in the hosting dashboard and are not in the code. Health checks expose nothing but "ok".</p>
-          <p><strong>Render's independently audited certifications</strong> (they cover the hosting platform: physical security, network, operations and Render staff access):</p>
+          <p>The app runs as a single container on Render (render.com) in the United States, on infrastructure provided by Amazon Web Services and Google Cloud. Each deployment is built from the GitHub repository; the container runs as a non-privileged user and holds no documents. Secrets (session key, AI key, sign-in configuration) are set in the hosting dashboard and are not in the code. Health checks expose nothing but &quot;ok&quot;.</p>
+          <p><strong>Render&apos;s independently audited certifications</strong> (they cover the hosting platform: physical security, network, operations and Render staff access):</p>
           <ul>
             <li><strong>SOC 2 Type 2</strong>: annual third-party audit of security, confidentiality and availability controls.</li>
             <li><strong>ISO/IEC 27001:2022</strong>: certified information security management system.</li>
             <li><strong>GDPR</strong> data processing agreement, and certification under the <strong>EU-US Data Privacy Framework</strong> (with the UK extension and Swiss-US DPF).</li>
             <li>HIPAA-enabled workspaces exist on Render for health data; SuperTools does not use one and does not process health data.</li>
           </ul>
-          <p>Render publishes its SOC 3 report to every customer and its SOC 2 report and ISO certificate on request. Source: <a href="https://render.com/trust" target="_blank" rel="noopener noreferrer">render.com/trust</a> and <a href="https://render.com/docs/certifications-compliance" target="_blank" rel="noopener noreferrer">Render's compliance documentation</a>, checked {LAST_REVIEWED}.</p>
+          <p>Render publishes its SOC 3 report to every customer and its SOC 2 report and ISO certificate on request. Source: <a href="https://render.com/trust" target="_blank" rel="noopener noreferrer">render.com/trust</a> and <a href="https://render.com/docs/certifications-compliance" target="_blank" rel="noopener noreferrer">Render&apos;s compliance documentation</a>, checked {LAST_REVIEWED}.</p>
           <p>What this does and does not mean: these certifications assure the <em>platform underneath</em> SuperTools. The SuperTools application itself (the code in this repository) is protected by the layers in section 3 and by automated tests, but has not been separately audited; see section 7.</p>
         </Section>
 
@@ -85,14 +85,14 @@ export default function TrustPage() {
           <ul>
             <li>Use your Microsoft 365 sign-in; do not share named-account passwords.</li>
             <li>Prefer browser tools for anything confidential. The tool page tells you where it runs before you add a file.</li>
-            <li>Before sending a deck or document to a client, use the "clean copy" tools to strip notes, comments, hidden content and metadata.</li>
+            <li>Before sending a deck or document to a client, use the &quot;clean copy&quot; tools to strip notes, comments, hidden content and metadata.</li>
             <li>Only paste into AI tools what you would be comfortable sending to an external provider.</li>
           </ul>
         </Section>
 
         <Section icon={<AlertTriangle className="h-5 w-5" />} title="7. Honest limits">
           <ul>
-            <li>The SuperTools application itself has <strong>no third-party certification or penetration-test report</strong> of its own. The hosting platform's SOC 2 Type 2 and ISO 27001 (section 5) cover the infrastructure, not this code. The application controls are self-built, documented in the repository and covered by automated tests.</li>
+            <li>The SuperTools application itself has <strong>no third-party certification or penetration-test report</strong> of its own. The hosting platform&apos;s SOC 2 Type 2 and ISO 27001 (section 5) cover the infrastructure, not this code. The application controls are self-built, documented in the repository and covered by automated tests.</li>
             <li>On the current free hosting plan the service sleeps when idle and its small file store resets on redeploy; a database can be attached to make usage records and preferences durable.</li>
             <li>AI providers process text under their own terms; check with the admin which provider is active before using AI tools for sensitive material.</li>
             <li>Security is a moving target. This page is updated whenever the controls change.</li>
