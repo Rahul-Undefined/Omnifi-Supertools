@@ -141,7 +141,16 @@ export interface ImageInput { label: string; mimeType: "image/jpeg" | "image/png
  * Multimodal completion (text + images), used by the Steps Recorder SOP endpoint. Images are passed through to the
  * provider in memory and never stored. Same retry/pacing behaviour as `complete`.
  */
-export async function completeWithImages(system: string, user: string, images: ImageInput[], opts: { maxTokens?: number; json?: boolean } = {}): Promise<AiResult> {
+export interface MultimodalOptions {
+  maxTokens?: number;
+  json?: boolean;
+  /** Override the provider model for this call (e.g. STEPS_RECORDER_MODEL); must belong to the active provider. */
+  model?: string;
+  /** Ask Gemini for minimal "thinking" so long multimodal requests answer faster (falls back silently if unsupported). */
+  fastThinking?: boolean;
+}
+
+export async function completeWithImages(system: string, user: string, images: ImageInput[], opts: MultimodalOptions = {}): Promise<AiResult> {
   try {
     return await completeWithImagesOnce(system, user, images, opts);
   } catch (e) {
@@ -154,10 +163,10 @@ export async function completeWithImages(system: string, user: string, images: I
   }
 }
 
-async function completeWithImagesOnce(system: string, user: string, images: ImageInput[], opts: { maxTokens?: number; json?: boolean }): Promise<AiResult> {
+async function completeWithImagesOnce(system: string, user: string, images: ImageInput[], opts: MultimodalOptions): Promise<AiResult> {
   const status = aiStatus();
   if (!status.configured) throw new AiError("AI provider is not configured", 503, status.hint);
-  const model = defaultModel();
+  const model = opts.model && matchesProvider(opts.model) ? opts.model : defaultModel();
   const maxTokens = opts.maxTokens ?? 4096;
   const controller = new AbortController();
   // Multimodal SOP requests with dozens of screenshots take a while on the free tier; allow up to 4 minutes.
@@ -166,13 +175,21 @@ async function completeWithImagesOnce(system: string, user: string, images: Imag
     if (env.aiProvider === "gemini") {
       const parts: Array<Record<string, unknown>> = [{ text: user }];
       for (const img of images) { parts.push({ text: img.label }); parts.push({ inline_data: { mime_type: img.mimeType, data: img.base64 } }); }
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-        method: "POST",
-        headers: { "content-type": "application/json", "x-goog-api-key": env.geminiKey },
-        body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts }], generationConfig: { maxOutputTokens: maxTokens, temperature: 0.3, ...(opts.json ? { responseMimeType: "application/json" } : {}) } }),
-        signal: controller.signal,
-      });
-      const data = await res.json().catch(() => ({}));
+      const call = async (thinking: Record<string, unknown> | null) => {
+        const generationConfig: Record<string, unknown> = { maxOutputTokens: maxTokens, temperature: 0.3, ...(opts.json ? { responseMimeType: "application/json" } : {}), ...(thinking ? { thinkingConfig: thinking } : {}) };
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-goog-api-key": env.geminiKey },
+          body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts }], generationConfig }),
+          signal: controller.signal,
+        });
+        const data = await res.json().catch(() => ({}));
+        return { res, data };
+      };
+      // Low thinking first (Gemini 3.x: thinkingLevel; 2.5: thinkingBudget). If the model rejects the field, retry plainly.
+      let { res, data } = opts.fastThinking ? await call({ thinkingLevel: "low" }) : await call(null);
+      if (opts.fastThinking && res.status === 400 && /thinking/i.test(String(data?.error?.message ?? ""))) ({ res, data } = await call({ thinkingBudget: 0 }));
+      if (opts.fastThinking && res.status === 400 && /thinking/i.test(String(data?.error?.message ?? ""))) ({ res, data } = await call(null));
       if (!res.ok) throw new AiError(`Gemini API error (${res.status})`, res.status === 429 ? 429 : 502, data?.error?.message);
       const cand = data.candidates?.[0];
       const text = (cand?.content?.parts ?? []).map((p: { text?: string }) => p.text ?? "").join("");

@@ -73,7 +73,9 @@ export const env = {
   stepsRecorderToken: str("STEPS_RECORDER_TOKEN"),
   stepsRecorderQuota: Number(str("STEPS_RECORDER_QUOTA", "5")),
   stepsRecorderWindowHours: Number(str("STEPS_RECORDER_WINDOW_HOURS", "5")),
-  stepsRecorderMaxImages: Number(str("STEPS_RECORDER_MAX_IMAGES", "40")),
+  stepsRecorderMaxImages: Number(str("STEPS_RECORDER_MAX_IMAGES", "24")),
+  /** Optional model override for SOP generation (e.g. a faster lite model); empty = AI_MODEL. */
+  stepsRecorderModel: str("STEPS_RECORDER_MODEL"),
   /** Retention in days; records older than this are purged automatically. */
   retentionUsageDays: Number(str("RETENTION_USAGE_DAYS", "90")),
   retentionAuditDays: Number(str("RETENTION_AUDIT_DAYS", "180")),
