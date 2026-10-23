@@ -1,13 +1,12 @@
-# Keeps the free Render instance awake during working hours so the team never
-# sees Render's "service waking up" screen. Render spins a free service down
-# after 15 minutes without traffic; this pings the health endpoint every 14
-# minutes, Monday to Friday 11:00 AM to 10:00 PM IST (05:30-16:30 UTC).
-# Weekends are left alone: the first visit then takes ~30 s to wake the service.
-# Private repos get 2,000 free Actions minutes a month; this uses about 1,000.
+# Backup keep-awake. The app now pings itself every 10 minutes 24x7
+# (src/instrumentation.ts, KEEP_AWAKE). This workflow only matters if the
+# instance was stopped externally (e.g. Render maintenance): it wakes it
+# during working hours so the self-ping can take over again.
+# Private repos get 2,000 free Actions minutes a month; this uses about 350.
 name: Keep Render awake
 on:
   schedule:
-    - cron: "*/14 5-16 * * 1-5"
+    - cron: "*/30 5-16 * * 1-5"
   workflow_dispatch:
 jobs:
   ping:

@@ -73,6 +73,11 @@ services:
         value: myomnifi.com
       - key: APP_URL
         value: https://omnifi-supertools.onrender.com
+      # Keep the free instance awake 24x7 by pinging our own URL every 10 minutes (one service fits in 750 free hours/month).
+      - key: KEEP_AWAKE
+        value: "true"
+      - key: KEEP_AWAKE_MINUTES
+        value: "10"
       # Optional: free PostgreSQL (e.g. Neon) so usage stats and team feedback survive redeploys.
       - key: DATABASE_URL
         sync: false
