@@ -45,7 +45,7 @@ export function SearchBox({ large, autoFocus, className }: { large?: boolean; au
             else if (e.key === "Escape") setOpen(false);
           }}
           placeholder={site.searchPlaceholder}
-          className={cn("flex-1 bg-transparent outline-none placeholder:text-muted/70", large ? "text-lg" : "text-base")}
+          className={cn("flex-1 bg-transparent outline-none focus:outline-none focus-visible:outline-none ring-0 shadow-none placeholder:text-muted/70", large ? "text-lg" : "text-base")}
           aria-label="Search tools"
           aria-autocomplete="list"
           aria-expanded={open && hits.length > 0}
