@@ -27,7 +27,6 @@ export function ToolCard({ tool, compact }: { tool: ToolDefinition; compact?: bo
         <span className="flex items-center gap-2">
           <span className="truncate font-semibold text-foreground">{tool.name}</span>
           {soon && <Badge tone="warning">Coming soon</Badge>}
-          {tool.runtime === "server" && !soon && <Badge tone="neutral">Server</Badge>}
         </span>
         {!compact && <span className="mt-1 block text-sm text-muted line-clamp-2">{tool.description}</span>}
       </span>
