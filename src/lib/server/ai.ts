@@ -160,7 +160,8 @@ async function completeWithImagesOnce(system: string, user: string, images: Imag
   const model = defaultModel();
   const maxTokens = opts.maxTokens ?? 4096;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 150_000);
+  // Multimodal SOP requests with dozens of screenshots take a while on the free tier; allow up to 4 minutes.
+  const timer = setTimeout(() => controller.abort(), 240_000);
   try {
     if (env.aiProvider === "gemini") {
       const parts: Array<Record<string, unknown>> = [{ text: user }];
