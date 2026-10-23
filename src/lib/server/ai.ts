@@ -7,6 +7,7 @@ import { env } from "./env";
  *   openai              -> OpenAI Chat Completions (OPENAI_API_KEY)
  *   openai-compatible   -> any OpenAI-compatible endpoint (OPENAI_BASE_URL + OPENAI_API_KEY),
  *                          e.g. Azure OpenAI gateway, Ollama, vLLM on the intranet.
+ *   gemini              -> Google Gemini API, generateContent (GEMINI_API_KEY)
  * Keys never leave this module.
  */
 export interface AiResult {
@@ -17,7 +18,8 @@ export interface AiResult {
 
 export function aiStatus(): { configured: boolean; provider?: string; model?: string; hint?: string } {
   const p = env.aiProvider;
-  if (!p) return { configured: false, hint: "Set AI_PROVIDER to anthropic, openai or openai-compatible, plus the matching API key." };
+  if (!p) return { configured: false, hint: "Set AI_PROVIDER to anthropic, gemini, openai or openai-compatible, plus the matching API key." };
+  if (p === "gemini" && !env.geminiKey) return { configured: false, provider: p, hint: "GEMINI_API_KEY is missing." };
   if (p === "anthropic" && !env.anthropicKey) return { configured: false, provider: p, hint: "ANTHROPIC_API_KEY is missing." };
   if ((p === "openai" || p === "openai-compatible") && !env.openaiKey && p === "openai") return { configured: false, provider: p, hint: "OPENAI_API_KEY is missing." };
   return { configured: true, provider: p, model: defaultModel() };
@@ -25,7 +27,7 @@ export function aiStatus(): { configured: boolean; provider?: string; model?: st
 
 function defaultModel(): string {
   if (env.aiModel) return env.aiModel;
-  return env.aiProvider === "anthropic" ? "claude-sonnet-5" : "gpt-4o-mini";
+  return env.aiProvider === "anthropic" ? "claude-sonnet-5" : env.aiProvider === "gemini" ? "gemini-3.8-flash" : "gpt-4o-mini";
 }
 
 export class AiError extends Error {
@@ -57,6 +59,25 @@ export async function complete(system: string, user: string, opts: { maxTokens?:
       if (!res.ok) throw new AiError(`Anthropic API error (${res.status})`, 502, data?.error?.message);
       const text = (data.content ?? []).filter((c: { type: string }) => c.type === "text").map((c: { text: string }) => c.text).join("");
       return { text: opts.json ? extractJson(text) : text, model: data.model ?? model, usage: data.usage ? { input: data.usage.input_tokens, output: data.usage.output_tokens } : undefined };
+    }
+    if (env.aiProvider === "gemini") {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-goog-api-key": env.geminiKey },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: system }] },
+          contents: [{ role: "user", parts: [{ text: user }] }],
+          generationConfig: { maxOutputTokens: maxTokens, temperature: 0.3, ...(opts.json ? { responseMimeType: "application/json" } : {}) },
+        }),
+        signal: controller.signal,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new AiError(`Gemini API error (${res.status})`, res.status === 429 ? 429 : 502, data?.error?.message);
+      const cand = data.candidates?.[0];
+      const text = (cand?.content?.parts ?? []).map((p: { text?: string }) => p.text ?? "").join("");
+      if (!text && cand?.finishReason && cand.finishReason !== "STOP") throw new AiError("Gemini returned no text", 502, `finishReason: ${cand.finishReason}`);
+      if (!text && data.promptFeedback?.blockReason) throw new AiError("Gemini blocked the request", 400, `blockReason: ${data.promptFeedback.blockReason}`);
+      return { text: opts.json ? extractJson(text) : text, model: data.modelVersion ?? model, usage: data.usageMetadata ? { input: data.usageMetadata.promptTokenCount ?? 0, output: data.usageMetadata.candidatesTokenCount ?? 0 } : undefined };
     }
     const base = env.aiProvider === "openai" ? "https://api.openai.com/v1" : env.openaiBaseUrl.replace(/\/$/, "");
     const res = await fetch(`${base}/chat/completions`, {

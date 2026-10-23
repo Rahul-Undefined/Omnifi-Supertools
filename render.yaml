@@ -16,11 +16,13 @@ services:
         value: "3000"
       - key: SESSION_SECRET
         generateValue: true
+      # AI provider: anthropic | gemini | openai | openai-compatible. Keys are pasted in the Render dashboard, never committed.
       - key: AI_PROVIDER
-        value: anthropic
+        value: gemini
       - key: AI_MODEL
-        value: claude-sonnet-5
-      # Paste your key in the Render dashboard (Environment tab); never commit it.
+        value: gemini-3.8-flash
+      - key: GEMINI_API_KEY
+        sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
       # REQUIRED in production: at least one sign-in method must exist (ADMIN_PASSWORD, USERS_JSON, Microsoft,

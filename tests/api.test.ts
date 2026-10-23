@@ -91,3 +91,34 @@ describe("/api/auth/login", async () => {
     expect(res.status).toBe(503);
   });
 });
+
+describe("Gemini provider", () => {
+  it("builds a generateContent request and reads the candidate text", async () => {
+    vi.resetModules();
+    process.env.AI_PROVIDER = "gemini";
+    process.env.GEMINI_API_KEY = "test-key-not-real";
+    const calls: { url: string; init: RequestInit }[] = [];
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
+      calls.push({ url: String(url), init: init ?? {} });
+      return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: "Hello from Gemini" }] }, finishReason: "STOP" }], modelVersion: "gemini-3.8-flash", usageMetadata: { promptTokenCount: 5, candidatesTokenCount: 3 } }), { status: 200 });
+    }) as typeof fetch;
+    try {
+      const { complete, aiStatus } = await import("@/lib/server/ai");
+      expect(aiStatus()).toMatchObject({ configured: true, provider: "gemini", model: "gemini-3.8-flash" });
+      const r = await complete("You are terse.", "Say hi", { maxTokens: 50 });
+      expect(r.text).toBe("Hello from Gemini");
+      expect(r.usage).toEqual({ input: 5, output: 3 });
+      expect(calls[0].url).toContain("generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent");
+      const headers = calls[0].init.headers as Record<string, string>;
+      expect(headers["x-goog-api-key"]).toBe("test-key-not-real");
+      expect(calls[0].url).not.toContain("test-key-not-real"); // key travels in a header, never the URL
+      const body = JSON.parse(String(calls[0].init.body));
+      expect(body.systemInstruction.parts[0].text).toBe("You are terse.");
+      expect(body.contents[0].parts[0].text).toBe("Say hi");
+    } finally {
+      globalThis.fetch = realFetch;
+      delete process.env.AI_PROVIDER; delete process.env.GEMINI_API_KEY;
+    }
+  });
+});
