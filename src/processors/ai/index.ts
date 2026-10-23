@@ -9,15 +9,15 @@ import { baseName } from "@/lib/utils";
  * browser first (PDF, DOCX, TXT) so raw documents never leave the machine
  * unless they are scanned images (which are sent for OCR-free extraction).
  */
-async function run(task: string, input: string, options: Record<string, unknown>, signal?: AbortSignal): Promise<{ text: string; model: string; usage?: { input: number; output: number } }> {
+async function run(task: string, input: string, options: Record<string, unknown>, signal?: AbortSignal): Promise<{ text: string; model: string; usage?: { input: number; output: number }; cached?: boolean }> {
   const res = await fetch("/api/ai/run", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ task, input, options }), signal });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new ProcessorError(data.error ?? `AI request failed (${res.status})`, data.hint);
   return data;
 }
 
-function finish(task: string, r: { text: string; model: string; usage?: { input: number; output: number } }, ext = "txt") {
-  const stats: Record<string, string> = { Model: r.model };
+function finish(task: string, r: { text: string; model: string; usage?: { input: number; output: number }; cached?: boolean }, ext = "txt") {
+  const stats: Record<string, string> = { Model: r.cached ? `${r.model} (cached, free)` : r.model };
   if (r.usage) stats.Tokens = `${r.usage.input.toLocaleString()} in / ${r.usage.output.toLocaleString()} out`;
   const mime = ext === "json" ? "application/json" : ext === "csv" ? "text/csv" : "text/plain";
   return { files: [fileFromText(`${task}.${ext}`, r.text, mime)], text: r.text, stats };
@@ -43,6 +43,39 @@ export const sqlAssistant = textTask("sqlAssistant");
 export const codeExplain = textTask("codeExplain");
 export const excelFormula = textTask("excelFormula");
 export const aiDetect = textTask("aiDetect");
+export const emailReply = textTask("emailReply");
+export const subjectLines = textTask("subjectLines");
+export const explainJargon = textTask("explainJargon");
+export const reformat = textTask("reformat");
+export const clientUpdate = textTask("clientUpdate");
+export const agendaFromNotes = textTask("agendaFromNotes");
+export const journalNarration = textTask("journalNarration", "csv");
+export const varianceCommentary = textTask("varianceCommentary");
+
+/** Spreadsheet-driven tasks: rows are joined into ONE request (one provider call per file, not per row). */
+const sheetTask = (task: string, ext: string, column?: string, maxRows = 300): FileProcessor => async (files, { options, onProgress, signal }) => {
+  const { readSheets, cellText, headerIndex } = await import("../shared/table");
+  const outputs = [];
+  let all = "";
+  for (let i = 0; i < files.length; i++) {
+    const sheets = (await readSheets(files[i])).filter((s) => s.rows.length > 1);
+    if (!sheets.length) throw new ProcessorError(`${files[i].name} has no rows`);
+    const s = sheets[0];
+    const col = column ? Math.max(0, headerIndex(s.rows, String(options.column ?? column))) : -1;
+    const lines = col >= 0 ? s.rows.slice(1).map((r) => cellText(r[col]).trim()).filter(Boolean) : s.rows.map((r) => r.map(cellText).join(","));
+    if (lines.length > maxRows) throw new ProcessorError(`Too many rows (${lines.length})`, `Keep it under ${maxRows} rows per file so one request fits the free tier.`);
+    onProgress?.((i + 0.3) / files.length, "Sending one request");
+    const r = await run(task, lines.join("\n"), options, signal);
+    const out = finish(task, r, ext);
+    out.files[0].name = `${baseName(files[i].name)}-${task}.${ext}`;
+    outputs.push(...out.files);
+    all += (files.length > 1 ? `===== ${files[i].name} =====\n` : "") + r.text + "\n\n";
+    onProgress?.((i + 1) / files.length);
+  }
+  return { files: outputs, text: all.trim() };
+};
+export const categorizeTransactions = sheetTask("categorizeTransactions", "csv", "Description");
+export const varianceFromSheet = sheetTask("varianceCommentary", "txt");
 
 /** Read a document to text in the browser. */
 async function fileToText(file: File, onProgress?: (f: number, l?: string) => void): Promise<string> {

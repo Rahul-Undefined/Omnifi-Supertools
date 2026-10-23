@@ -14,6 +14,7 @@ const recordAudit = vi.fn();
 const recordUsage = vi.fn();
 const recordFeedback = vi.fn();
 const counters = new Map<string, { start: number; count: number }>();
+const cache = new Map<string, string>();
 vi.mock("@/lib/server/store", () => ({ store: () => ({
   recordAudit, recordUsage, recordFeedback,
   listFeedback: async () => [],
@@ -21,6 +22,7 @@ vi.mock("@/lib/server/store", () => ({ store: () => ({
   listAccounts: async () => [], getAccount: async () => null, saveAccount: async () => {}, deleteAccount: async () => {},
   getPrefs: async () => null, savePrefs: async () => {},
   rateHit: async (key: string, start: number) => { const c = counters.get(key); const n = c && c.start === start ? c.count + 1 : 1; counters.set(key, { start, count: n }); return n; },
+  cacheGet: async (key: string) => cache.get(key) ?? null, cacheSet: async (key: string, value: string) => { cache.set(key, value); },
   purge: async () => ({}),
   kind: "mock",
 }) }));
@@ -119,6 +121,39 @@ describe("Gemini provider", () => {
     } finally {
       globalThis.fetch = realFetch;
       delete process.env.AI_PROVIDER; delete process.env.GEMINI_API_KEY;
+    }
+  });
+});
+
+describe("AI run: free-tier controls", () => {
+  it("answers identical requests from cache (one provider call), routes lite tasks to the lite model, and paces globally", async () => {
+    vi.resetModules();
+    process.env.AI_PROVIDER = "gemini";
+    process.env.GEMINI_API_KEY = "test-key-not-real";
+    process.env.AI_GLOBAL_PER_MIN = "2";
+    process.env.AI_CACHE_DAYS = "7";
+    let providerCalls = 0;
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async (url: string | URL) => {
+      providerCalls++;
+      return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: `reply for ${String(url).includes("flash-lite") ? "lite" : "standard"}` }] }, finishReason: "STOP" }] }), { status: 200 });
+    }) as typeof fetch;
+    try {
+      const { POST } = await import("@/app/api/ai/run/route");
+      const call = (task: string, input: string) => POST(json("/api/ai/run", { task, input, options: {} }));
+      const a = await (await call("subjectLines", "Please send the Q3 statements")).json();
+      expect(a.text).toBe("reply for lite"); // lite-tier task used the lite model
+      expect(a.cached).toBe(false);
+      const b = await (await call("subjectLines", "Please send the Q3 statements")).json();
+      expect(b.cached).toBe(true); // second identical request: no provider call
+      expect(providerCalls).toBe(1);
+      await call("summarize", "something new 1");
+      const third = await call("summarize", "something new 2"); // 3rd uncached call in the minute exceeds AI_GLOBAL_PER_MIN=2
+      expect(third.status).toBe(429);
+      expect((await third.json()).hint).toMatch(/per minute/);
+    } finally {
+      globalThis.fetch = realFetch;
+      for (const k of ["AI_PROVIDER", "GEMINI_API_KEY", "AI_GLOBAL_PER_MIN", "AI_CACHE_DAYS"]) delete process.env[k];
     }
   });
 });

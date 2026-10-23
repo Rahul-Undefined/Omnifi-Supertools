@@ -46,6 +46,13 @@ export const env = {
   openaiKey: str("OPENAI_API_KEY"),
   openaiBaseUrl: str("OPENAI_BASE_URL", "https://api.openai.com/v1"),
   aiMaxInputChars: Number(str("AI_MAX_INPUT_CHARS", "120000")),
+  /** Cheaper model for short, simple tasks (free-tier friendly). Empty = use AI_MODEL for everything. */
+  aiModelLite: str("AI_MODEL_LITE"),
+  /** Whole-server pacing so the free tier's requests-per-minute / per-day limits are never exceeded. 0 disables. */
+  aiGlobalPerMin: Number(str("AI_GLOBAL_PER_MIN", "8")),
+  aiGlobalPerDay: Number(str("AI_GLOBAL_PER_DAY", "200")),
+  /** Identical requests are answered from a cache for this many days (0 disables). */
+  aiCacheDays: Number(str("AI_CACHE_DAYS", "7")),
   /** Storage */
   databaseUrl: str("DATABASE_URL"),
   dataDir: str("DATA_DIR", ".data"),

@@ -23,6 +23,15 @@ services:
         value: gemini-3.8-flash
       - key: GEMINI_API_KEY
         sync: false
+      # Keep the whole team inside Gemini's free tier: lite model for short tasks, shared pacing, 7-day answer cache.
+      - key: AI_MODEL_LITE
+        value: gemini-3.5-flash-lite
+      - key: AI_GLOBAL_PER_MIN
+        value: "8"
+      - key: AI_GLOBAL_PER_DAY
+        value: "200"
+      - key: AI_CACHE_DAYS
+        value: "7"
       - key: ANTHROPIC_API_KEY
         sync: false
       # REQUIRED in production: at least one sign-in method must exist (ADMIN_PASSWORD, USERS_JSON, Microsoft,

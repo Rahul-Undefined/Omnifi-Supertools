@@ -102,7 +102,7 @@ describe("server auth helpers", () => {
 describe("protected API routes", () => {
   beforeEach(() => {
     vi.doMock("next/headers", () => ({ cookies: async () => ({ get: () => undefined, set: () => {}, delete: () => {} }), headers: async () => new Headers() }));
-    vi.doMock("@/lib/server/store", () => ({ store: () => ({ recordAudit: vi.fn(), recordUsage: vi.fn(), recordFeedback: vi.fn(), listFeedback: async () => [], rateHit: async () => 1, purge: async () => ({}), listAccounts: async () => [], getAccount: async () => null, kind: "mock" }) }));
+    vi.doMock("@/lib/server/store", () => ({ store: () => ({ recordAudit: vi.fn(), recordUsage: vi.fn(), recordFeedback: vi.fn(), listFeedback: async () => [], rateHit: async () => 1, cacheGet: async () => null, cacheSet: async () => {}, purge: async () => ({}), listAccounts: async () => [], getAccount: async () => null, kind: "mock" }) }));
   });
   afterEach(() => { vi.doUnmock("next/headers"); vi.doUnmock("@/lib/server/store"); });
   const json = (url: string, body: unknown) => new Request(`http://localhost${url}`, { method: "POST", headers: { "content-type": "application/json", host: "localhost" }, body: JSON.stringify(body) });

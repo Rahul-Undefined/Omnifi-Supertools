@@ -30,6 +30,21 @@ function defaultModel(): string {
   return env.aiProvider === "anthropic" ? "claude-sonnet-5" : env.aiProvider === "gemini" ? "gemini-3.8-flash" : "gpt-4o-mini";
 }
 
+/** Cheaper model for short tasks; falls back to the main model when none is configured. */
+export function liteModel(): string {
+  if (env.aiModelLite) return env.aiModelLite;
+  if (env.aiProvider === "gemini") return "gemini-3.5-flash-lite";
+  if (env.aiProvider === "anthropic") return "claude-haiku-5-5";
+  if (env.aiProvider === "openai") return "gpt-4o-mini";
+  return defaultModel();
+}
+
+export function modelFor(tier: "lite" | "standard" | undefined): string {
+  return tier === "lite" ? liteModel() : defaultModel();
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 export class AiError extends Error {
   hint?: string;
   status: number;
@@ -40,10 +55,24 @@ export class AiError extends Error {
   }
 }
 
-export async function complete(system: string, user: string, opts: { maxTokens?: number; json?: boolean } = {}): Promise<AiResult> {
+export async function complete(system: string, user: string, opts: { maxTokens?: number; json?: boolean; tier?: "lite" | "standard" } = {}): Promise<AiResult> {
+  // One polite retry on provider rate limiting (free tiers are strict), then a clear message.
+  try {
+    return await completeOnce(system, user, opts);
+  } catch (e) {
+    if (e instanceof AiError && e.status === 429) {
+      await sleep(2500);
+      try { return await completeOnce(system, user, opts); }
+      catch (e2) { if (e2 instanceof AiError && e2.status === 429) throw new AiError("The AI provider is busy (free-tier limit)", 429, "Wait a minute and try again. Identical requests are served from cache, so retrying the same text is free."); throw e2; }
+    }
+    throw e;
+  }
+}
+
+async function completeOnce(system: string, user: string, opts: { maxTokens?: number; json?: boolean; tier?: "lite" | "standard" }): Promise<AiResult> {
   const status = aiStatus();
   if (!status.configured) throw new AiError("AI provider is not configured", 503, status.hint);
-  const model = defaultModel();
+  const model = modelFor(opts.tier);
   const maxTokens = opts.maxTokens ?? 2048;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 120_000);
@@ -56,7 +85,7 @@ export async function complete(system: string, user: string, opts: { maxTokens?:
         signal: controller.signal,
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new AiError(`Anthropic API error (${res.status})`, 502, data?.error?.message);
+      if (!res.ok) throw new AiError(`Anthropic API error (${res.status})`, res.status === 429 ? 429 : 502, data?.error?.message);
       const text = (data.content ?? []).filter((c: { type: string }) => c.type === "text").map((c: { text: string }) => c.text).join("");
       return { text: opts.json ? extractJson(text) : text, model: data.model ?? model, usage: data.usage ? { input: data.usage.input_tokens, output: data.usage.output_tokens } : undefined };
     }
@@ -87,7 +116,7 @@ export async function complete(system: string, user: string, opts: { maxTokens?:
       signal: controller.signal,
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new AiError(`AI provider error (${res.status})`, 502, data?.error?.message);
+    if (!res.ok) throw new AiError(`AI provider error (${res.status})`, res.status === 429 ? 429 : 502, data?.error?.message);
     const text = data.choices?.[0]?.message?.content ?? "";
     return { text: opts.json ? extractJson(text) : text, model: data.model ?? model, usage: data.usage ? { input: data.usage.prompt_tokens, output: data.usage.completion_tokens } : undefined };
   } catch (e) {

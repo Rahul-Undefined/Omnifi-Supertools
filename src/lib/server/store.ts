@@ -63,6 +63,7 @@ interface Snapshot {
   prefs?: Record<string, UserPrefs>;
   feedback?: FeedbackItem[];
   rates?: Record<string, { start: number; count: number }>;
+  aiCache?: Record<string, { at: number; value: string }>;
   purgedAt?: number;
 }
 
@@ -91,6 +92,8 @@ interface Backend {
   savePrefs(userId: string, prefs: UserPrefs): Promise<void>;
   /** Increment a fixed-window counter and return the new count. */
   rateHit(key: string, windowStart: number, windowMs: number): Promise<number>;
+  cacheGet(key: string, maxAgeMs: number): Promise<string | null>;
+  cacheSet(key: string, value: string): Promise<void>;
   /** Delete records older than the retention periods. Returns counts removed. */
   purge(r: Retention, now?: number): Promise<Record<string, number>>;
   kind: string;
@@ -194,8 +197,22 @@ class FileBackend implements Backend {
     }
     return next.count;
   }
+  async cacheGet(key: string, maxAgeMs: number) {
+    const d = await this.load();
+    const hit = d.aiCache?.[key];
+    return hit && hit.at + maxAgeMs > Date.now() ? hit.value : null;
+  }
+  async cacheSet(key: string, value: string) {
+    const d = await this.load();
+    d.aiCache ??= {};
+    d.aiCache[key] = { at: Date.now(), value };
+    const keys = Object.keys(d.aiCache);
+    if (keys.length > 2000) for (const k of keys.sort((a, b) => d.aiCache![a].at - d.aiCache![b].at).slice(0, 500)) delete d.aiCache[k];
+    this.flush();
+  }
   async purge(r: Retention, now = Date.now()) {
     const d = await this.load();
+    if (d.aiCache) for (const [k, v] of Object.entries(d.aiCache)) if (v.at < now - 30 * 86_400_000) delete d.aiCache[k];
     const cut = (days: number) => now - days * 86_400_000;
     const before = { usage: d.usage.length, audit: d.audit.length, feedback: (d.feedback ?? []).length, prefs: Object.keys(d.prefs ?? {}).length };
     d.usage = d.usage.filter((u) => u.at >= cut(r.usageDays));
@@ -230,6 +247,7 @@ class PgBackend implements Backend {
           CREATE TABLE IF NOT EXISTS accounts (username TEXT PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, role TEXT NOT NULL, password_hash TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL);
           CREATE TABLE IF NOT EXISTS user_prefs (user_id TEXT PRIMARY KEY, data JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL);
           CREATE TABLE IF NOT EXISTS rate_limits (key TEXT PRIMARY KEY, window_start BIGINT NOT NULL, count INTEGER NOT NULL);
+          CREATE TABLE IF NOT EXISTS ai_cache (key TEXT PRIMARY KEY, at TIMESTAMPTZ NOT NULL, value TEXT NOT NULL);
         `);
       })();
     }
@@ -302,8 +320,18 @@ class PgBackend implements Backend {
     if (Math.random() < 0.01) await p.query("DELETE FROM rate_limits WHERE window_start < $1", [Date.now() - windowMs * 2]);
     return Number(r.rows[0].count);
   }
+  async cacheGet(key: string, maxAgeMs: number) {
+    const p = await this.init();
+    const r = await p.query("SELECT value FROM ai_cache WHERE key = $1 AND at > $2", [key, new Date(Date.now() - maxAgeMs).toISOString()]);
+    return r.rows.length ? (r.rows[0].value as string) : null;
+  }
+  async cacheSet(key: string, value: string) {
+    const p = await this.init();
+    await p.query("INSERT INTO ai_cache (key, at, value) VALUES ($1, now(), $2) ON CONFLICT (key) DO UPDATE SET at = now(), value = EXCLUDED.value", [key, value]);
+  }
   async purge(r: Retention, now = Date.now()) {
     const p = await this.init();
+    await p.query("DELETE FROM ai_cache WHERE at < $1", [new Date(now - 30 * 86_400_000).toISOString()]);
     const ts = (days: number) => new Date(now - days * 86_400_000).toISOString();
     const u = await p.query("DELETE FROM usage_events WHERE at < $1", [ts(r.usageDays)]);
     const a = await p.query("DELETE FROM audit_events WHERE at < $1", [ts(r.auditDays)]);
