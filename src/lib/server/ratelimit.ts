@@ -43,6 +43,12 @@ export async function peekAllowance(userId: string, limit: number, hours: number
   return { limit, used: Math.min(used, limit), remaining: Math.max(0, limit - used), resetsAt: windowStart + windowMs, windowHours: hours };
 }
 
+export async function refundAllowance(userId: string, hours: number): Promise<void> {
+  const windowMs = Math.max(1, hours) * 3_600_000;
+  const now = Date.now();
+  await store().rateRefund(`w:ai:${userId}`, now - (now % windowMs));
+}
+
 export async function consumeAllowance(userId: string, limit: number, hours: number): Promise<Allowance & { ok: boolean }> {
   if (!limit || limit <= 0) return { ok: true, limit: 0, used: 0, remaining: Infinity, resetsAt: 0, windowHours: hours };
   const windowMs = Math.max(1, hours) * 3_600_000;

@@ -6,7 +6,7 @@ import { tasks } from "@/lib/server/ai-tasks";
 import { env } from "@/lib/server/env";
 import { requireUser, isSameOrigin } from "@/lib/server/auth";
 import { store } from "@/lib/server/store";
-import { rateLimit, dailyQuota, clientKey, consumeAllowance, peekAllowance } from "@/lib/server/ratelimit";
+import { rateLimit, dailyQuota, clientKey, consumeAllowance, peekAllowance, refundAllowance } from "@/lib/server/ratelimit";
 import { handleError, jsonError, readJson } from "@/lib/server/api";
 
 const schema = z.object({
@@ -65,7 +65,14 @@ export async function POST(req: Request) {
     // Server-wide pacing keeps the whole team under the provider's free-tier limits.
     if (env.aiGlobalPerMin > 0 && !(await rateLimit("ai:global", env.aiGlobalPerMin)).ok) return NextResponse.json({ error: "The AI tools are busy right now", hint: `The team shares ${env.aiGlobalPerMin} AI requests per minute on the free tier. Try again in a few seconds.` }, { status: 429, headers: { "retry-after": "15" } });
     if (env.aiGlobalPerDay > 0) { const g = await dailyQuota("ai:global", env.aiGlobalPerDay); if (!g.ok) return NextResponse.json({ error: "Today's shared AI allowance is used up", hint: `The free tier allows about ${env.aiGlobalPerDay} requests per day across the team. Resets at midnight UTC.` }, { status: 429, headers: { "retry-after": String(g.retryAfter) } }); }
-    const result = await complete(spec.system, prompt, { json: spec.json, maxTokens: spec.maxTokens, tier: spec.tier });
+    let result;
+    try {
+      result = await complete(spec.system, prompt, { json: spec.json, maxTokens: spec.maxTokens, tier: spec.tier });
+    } catch (e) {
+      // The provider failed, not the person: give the request back.
+      await refundAllowance(user.id, env.aiUserWindowHours);
+      throw e;
+    }
     if (cacheMs > 0) await store().cacheSet(cacheKey, JSON.stringify(result));
     await store().recordAudit({ at: Date.now(), actor: user.id, action: `ai.${task}`, detail: `${input.length} chars, ${Date.now() - started} ms, ${result.model}` });
     return NextResponse.json(present(result, mine, false));

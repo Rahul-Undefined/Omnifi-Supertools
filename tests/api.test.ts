@@ -23,6 +23,7 @@ vi.mock("@/lib/server/store", () => ({ store: () => ({
   getPrefs: async () => null, savePrefs: async () => {},
   rateHit: async (key: string, start: number) => { const c = counters.get(key); const n = c && c.start === start ? c.count + 1 : 1; counters.set(key, { start, count: n }); return n; },
   ratePeek: async (key: string, start: number) => { const c = counters.get(key); return c && c.start === start ? c.count : 0; },
+  rateRefund: async (key: string, start: number) => { const c = counters.get(key); if (c && c.start === start && c.count > 0) c.count--; },
   cacheGet: async (key: string) => cache.get(key) ?? null, cacheSet: async (key: string, value: string) => { cache.set(key, value); },
   purge: async () => ({}),
   kind: "mock",
