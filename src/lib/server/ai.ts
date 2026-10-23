@@ -25,14 +25,21 @@ export function aiStatus(): { configured: boolean; provider?: string; model?: st
   return { configured: true, provider: p, model: defaultModel() };
 }
 
+/** AI_MODEL is honoured only when it belongs to the active provider's family, so a stale value cannot break every call. */
+function matchesProvider(model: string): boolean {
+  if (env.aiProvider === "gemini") return /^gemini/i.test(model);
+  if (env.aiProvider === "anthropic") return /^claude/i.test(model);
+  return true;
+}
+
 function defaultModel(): string {
-  if (env.aiModel) return env.aiModel;
+  if (env.aiModel && matchesProvider(env.aiModel)) return env.aiModel;
   return env.aiProvider === "anthropic" ? "claude-sonnet-5" : env.aiProvider === "gemini" ? "gemini-3.8-flash" : "gpt-4o-mini";
 }
 
 /** Cheaper model for short tasks; falls back to the main model when none is configured. */
 export function liteModel(): string {
-  if (env.aiModelLite) return env.aiModelLite;
+  if (env.aiModelLite && matchesProvider(env.aiModelLite)) return env.aiModelLite;
   if (env.aiProvider === "gemini") return "gemini-3.5-flash-lite";
   if (env.aiProvider === "anthropic") return "claude-haiku-5-5";
   if (env.aiProvider === "openai") return "gpt-4o-mini";
