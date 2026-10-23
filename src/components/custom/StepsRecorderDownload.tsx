@@ -24,7 +24,7 @@ export function StepsRecorderDownload() {
         <Step icon={<FolderOpen className="h-5 w-5" />} title="1. Unzip anywhere" text="Right-click the ZIP, choose Extract All, and keep the whole folder together (for example in Documents). Do not move files inside the program folder." />
         <Step icon={<MonitorPlay className="h-5 w-5" />} title="2. Start it" text='Double-click "Start Steps Recorder.vbs". It opens through Windowsâ€™ own signed components, so it also works on laptops that block unknown .exe files.' />
         <Step icon={<Keyboard className="h-5 w-5" />} title="3. Record" text="Pick a save folder, click Start recording and work as normal. Every click becomes a step with a screenshot; drag to highlight an area. Press Left Ctrl + Right Ctrl together to open it at any time." />
-        <Step icon={<ShieldCheck className="h-5 w-5" />} title="4. Share the result" text="Stop creates a folder with screen.mp4, steps.html, steps.docx, a summary and screenshots. Export ZIP makes one file to send. Pause before anything private; the screen is captured as-is." />
+        <Step icon={<ShieldCheck className="h-5 w-5" />} title="4. Share the result" text="Stop creates a folder with screen.mp4, steps.html, steps.docx, a summary, the screenshots and master-screenshot.png (every screenshot stitched into one scrollable image at full quality). Export ZIP makes one file to send. Pause before anything private; the screen is captured as-is." />
       </div>
 
       <p className="text-xs text-muted">Microphone narration is off unless you tick it. The SuperTools button inside the app only opens this website. Questions: {site.support.name}, <a href={`mailto:${site.support.email}`} className="text-accent hover:underline">{site.support.email}</a>.</p>
