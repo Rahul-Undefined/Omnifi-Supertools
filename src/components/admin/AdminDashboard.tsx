@@ -5,7 +5,17 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Card";
 import { formatBytes } from "@/lib/utils";
 
+interface AiStats {
+  configured: boolean; provider?: string; model?: string; liteModel?: string; hint?: string; keyFingerprint: string;
+  limits: { perUser: number; windowHours: number; globalPerMin: number; globalPerDay: number; cacheDays: number; maxInputChars: number };
+  totals: { all: number; today: number; week: number; cached: number; providerCallsToday: number };
+  byUser: { user: string; total: number; today: number; week: number; cached: number }[];
+  byTask: { task: string; n: number }[];
+  recent: { at: number; user: string; task: string; detail: string }[];
+}
+
 interface Stats {
+  ai?: AiStats;
   users: { total: number; activeToday: number; activeWeek: number };
   usage: { total: number; today: number; week: number; failed: number; cancelled: number; avgMs: number; p95Ms: number };
   popular: { id: string; name: string; runs: number; failed: number; avgMs: number }[];
@@ -82,6 +92,37 @@ export function AdminDashboard() {
           <Table head={["When", "Tool", "Duration"]} rows={s.failedJobs.map((f) => [new Date(f.at).toLocaleString(), f.tool, fmtTime(f.ms)])} empty="No failures. Nice." />
         </section>
       </div>
+
+      {s.ai && (
+        <section>
+          <H2>AI usage</H2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Kpi label="Provider" value={s.ai.configured ? `${s.ai.provider} · ${s.ai.model}` : "Not configured"} small tone={s.ai.configured ? "success" : "warning"} />
+            <Kpi label="Quick-task model" value={s.ai.liteModel ?? "—"} small />
+            <Kpi label="API key" value={s.ai.keyFingerprint} small />
+            <Kpi label="Per person" value={`${s.ai.limits.perUser} / ${s.ai.limits.windowHours} h`} />
+            <Kpi label="Requests today" value={s.ai.totals.today} />
+            <Kpi label="Provider calls today" value={`${s.ai.totals.providerCallsToday} / ${s.ai.limits.globalPerDay}`} tone={s.ai.totals.providerCallsToday > s.ai.limits.globalPerDay * 0.85 ? "warning" : undefined} />
+            <Kpi label="This week" value={s.ai.totals.week} />
+            <Kpi label="All time (cache hits)" value={`${s.ai.totals.all} (${s.ai.totals.cached})`} small />
+          </div>
+          <p className="mt-2 text-xs text-muted">Shared pacing {s.ai.limits.globalPerMin}/min · answer cache {s.ai.limits.cacheDays} days · max input {s.ai.limits.maxInputChars.toLocaleString()} chars. Counts come from the audit log (retention applies).</p>
+          <div className="mt-4 grid gap-6 lg:grid-cols-2">
+            <div>
+              <h3 className="mb-2 text-sm font-semibold text-foreground">By person</h3>
+              <Table head={["Person", "Today", "7 days", "All time", "Cache hits"]} rows={s.ai.byUser.map((u) => [u.user, u.today, u.week, u.total, u.cached])} empty="No AI requests yet." />
+            </div>
+            <div>
+              <h3 className="mb-2 text-sm font-semibold text-foreground">By tool</h3>
+              <Table head={["Task", "Requests"]} rows={s.ai.byTask.map((t) => [t.task, t.n])} empty="No AI requests yet." />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h3 className="mb-2 text-sm font-semibold text-foreground">Recent AI requests</h3>
+            <Table head={["When", "Person", "Task", "Detail"]} rows={s.ai.recent.map((r) => [new Date(r.at).toLocaleString(), r.user, r.task, r.detail])} empty="No AI requests yet." />
+          </div>
+        </section>
+      )}
 
       <section>
         <H2>System health</H2>
