@@ -30,7 +30,8 @@ const CSP = [
   "upgrade-insecure-requests",
 ].join("; ");
 
-const PUBLIC_PATHS = ["/login", "/api/auth/", "/api/health", "/branding/", "/ffmpeg/", "/tesseract/", "/tessdata/", "/favicon"];
+// /api/steps-recorder/ is used by the Steps Recorder desktop app (no browser session); it authenticates with its own app token.
+const PUBLIC_PATHS = ["/login", "/api/auth/", "/api/health", "/api/steps-recorder/", "/branding/", "/ffmpeg/", "/tesseract/", "/tessdata/", "/favicon"];
 
 const isProd = process.env.NODE_ENV === "production";
 const headerMode = process.env.AUTH_MODE === "header";

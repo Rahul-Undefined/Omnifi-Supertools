@@ -39,6 +39,16 @@ services:
         value: "3"
       - key: ANTHROPIC_API_KEY
         sync: false
+      # Steps Recorder desktop app: paste the same token that is baked into the app build (Branding/AppConfig.cs).
+      # 5 AI-written SOPs per 5 hours per computer; at most 40 screenshots per SOP are forwarded to the model.
+      - key: STEPS_RECORDER_TOKEN
+        sync: false
+      - key: STEPS_RECORDER_QUOTA
+        value: "5"
+      - key: STEPS_RECORDER_WINDOW_HOURS
+        value: "5"
+      - key: STEPS_RECORDER_MAX_IMAGES
+        value: "40"
       # REQUIRED in production: at least one sign-in method must exist (ADMIN_PASSWORD, USERS_JSON, Microsoft,
       # or header SSO with AUTH_PROXY_SECRET). Without one the app answers 503 instead of running open.
       - key: ADMIN_PASSWORD

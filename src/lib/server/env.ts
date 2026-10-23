@@ -69,6 +69,11 @@ export const env = {
   aiUserQuota: Number(str("AI_USER_QUOTA", "15")),
   aiUserWindowHours: Number(str("AI_USER_WINDOW_HOURS", "3")),
   quotaWebPerDay: Number(str("QUOTA_WEB_PER_DAY", "2000")),
+  /** Steps Recorder desktop app: shared app token (32+ chars) and per-computer AI SOP allowance. */
+  stepsRecorderToken: str("STEPS_RECORDER_TOKEN"),
+  stepsRecorderQuota: Number(str("STEPS_RECORDER_QUOTA", "5")),
+  stepsRecorderWindowHours: Number(str("STEPS_RECORDER_WINDOW_HOURS", "5")),
+  stepsRecorderMaxImages: Number(str("STEPS_RECORDER_MAX_IMAGES", "40")),
   /** Retention in days; records older than this are purged automatically. */
   retentionUsageDays: Number(str("RETENTION_USAGE_DAYS", "90")),
   retentionAuditDays: Number(str("RETENTION_AUDIT_DAYS", "180")),
