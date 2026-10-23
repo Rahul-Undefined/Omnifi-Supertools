@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { Download, MonitorPlay, Keyboard, FolderOpen, ShieldCheck } from "lucide-react";
 import { site } from "@/config/site";
 
@@ -12,7 +12,7 @@ export function StepsRecorderDownload() {
           <div>
             <h2 className="text-lg font-semibold text-foreground">Omnifi Steps Recorder for Windows<span className="brand-dot">.</span></h2>
             <p className="mt-1 text-sm text-body max-w-xl">Records your screen as a video plus a click-by-click report (HTML, Word, screenshots). Nothing to install, no admin rights, and nothing leaves your computer.</p>
-            <p className="mt-2 text-xs text-muted">ZIP Â· about 69 MB Â· Windows 10/11 64-bit Â· version 2026-10-23</p>
+            <p className="mt-2 text-xs text-muted">ZIP · about 69 MB · Windows 10/11 64-bit · version 2026-10-23</p>
           </div>
         </div>
         <a href={site.links.stepsRecorder} download className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-control bg-accent px-5 text-sm font-semibold text-accent-foreground hover:bg-accent-hover transition-colors">
