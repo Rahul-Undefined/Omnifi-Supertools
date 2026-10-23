@@ -405,4 +405,21 @@ export const imageTools: ToolDefinition[] = [
     related: ["pdf-to-jpg"],
   },
   { id: "barcode-tools", name: "Barcode tools", category: "images", description: "Generate and read 1D barcodes.", keywords: ["barcode", "ean", "code128"], input: img, output: ["png"], processor: "image.barcode", kind: "file", status: "coming-soon", runtime: "browser", icon: "Barcode" },
+  {
+    id: "image-opacity", name: "Change image opacity", category: "images", description: "Make an image semi-transparent (PNG output).", keywords: ["opacity", "transparent", "fade image", "alpha"], input: img, output: ["png"], processor: "image.opacity", kind: "file", status: "ready", runtime: "browser", multiple: true, chainable: true, icon: "Blend",
+    options: [{ type: "range", key: "opacity", label: "Opacity %", default: 50, min: 0, max: 100, step: 1 }],
+  },
+  {
+    id: "color-to-transparent", name: "Make colour transparent / replace colour", category: "images", description: "Turn a background colour (e.g. white) transparent, or swap one colour for another, with a tolerance slider.", keywords: ["transparent background", "remove white background", "replace color", "change colour", "png transparent", "logo background"], input: img, output: ["png"], processor: "image.colorToTransparent", kind: "file", status: "ready", runtime: "browser", multiple: true, chainable: true, icon: "Pipette",
+    options: [{ type: "select", key: "mode", label: "Action", default: "transparent", options: [{ value: "transparent", label: "Make the colour transparent" }, { value: "replace", label: "Replace the colour" }] }, { type: "checkbox", key: "autoColor", label: "Use the top-left pixel colour (backgrounds)", default: true }, { type: "color", key: "color", label: "Colour to match", default: "#FFFFFF" }, { type: "range", key: "tolerance", label: "Tolerance", default: 30, min: 0, max: 255, step: 1 }, { type: "color", key: "replaceWith", label: "Replace with", default: "#0A0F3D" }, { type: "checkbox", key: "soft", label: "Soft edges", default: true }],
+  },
+  {
+    id: "split-image", name: "Split image into grid", category: "images", description: "Cut an image into R × C tiles (Instagram grids, puzzle pieces, print sections).", keywords: ["split image", "grid", "tiles", "slice image", "instagram grid"], input: img, output: ["zip"], processor: "image.splitGrid", kind: "file", status: "ready", runtime: "browser", multiple: true, icon: "Grid3x3",
+    options: [{ type: "number", key: "rows", label: "Rows", default: 2, min: 1, max: 20 }, { type: "number", key: "cols", label: "Columns", default: 2, min: 1, max: 20 }, formatOption],
+  },
+  {
+    id: "image-to-text", name: "Image to text (OCR)", category: "images", description: "Read the text in a photo or screenshot. Same engine as OCR PDF, runs in your browser.", keywords: ["image to text", "ocr", "screenshot to text", "photo text", "read text from image"], input: ["image/jpeg", "image/png", "image/webp"], output: ["txt"], processor: "pdf.ocr", kind: "file", status: "ready", runtime: "browser", multiple: true, chainable: true, icon: "ScanText",
+    options: [{ type: "select", key: "lang", label: "Language", default: "eng", options: [{ value: "eng", label: "English" }, { value: "spa", label: "Spanish" }, { value: "fra", label: "French" }, { value: "deu", label: "German" }, { value: "hin", label: "Hindi" }] }],
+    related: ["ocr-pdf"],
+  }
 ];

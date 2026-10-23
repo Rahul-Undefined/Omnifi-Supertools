@@ -139,3 +139,4 @@ function strip(html: string): string {
     .replace(/&#39;|&apos;/g, "'")
     .trim();
 }
+export { findReplace, hiddenChars, joinLines, splitText, prefixSuffix, extractSubstring, shuffleLines, rotateList, groupItems, wordFrequency, truncateLines, truncateList, randomizeCase, slug, textToTable, censor, rot13 } from "./extra";

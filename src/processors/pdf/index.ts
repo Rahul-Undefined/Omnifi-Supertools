@@ -471,3 +471,4 @@ export const repair: FileProcessor = async (files, { onProgress }) => {
   }
   return { files: outputs, warnings: warnings.length ? warnings : undefined };
 };
+export { extractImages as extractPdfImages, toEpub } from "./extra";

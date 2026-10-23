@@ -134,5 +134,36 @@ export const utilityTools: ToolDefinition[] = [
     status: "ready",
     runtime: "browser",
     icon: "MonitorPlay",
+  },
+  {
+    id: "number-to-words", name: "Number to words (checks)", category: "utilities", description: "Write amounts in words the way checks and legal documents need: 'One thousand two hundred thirty-four and 56/100 dollars'. Also converts words back to numbers.", keywords: ["number to words", "amount in words", "check writing", "cheque", "spell out number", "words to number"], input: [], output: ["txt"], processor: "utilities.numberToWords", kind: "text", status: "ready", runtime: "browser", icon: "SpellCheck", inputPlaceholder: "1234.56\n$2,500",
+    options: [{ type: "select", key: "mode", label: "Direction", default: "toWords", options: [{ value: "toWords", label: "Number → words" }, { value: "toNumber", label: "Words → number" }] }, { type: "select", key: "style", label: "Style", default: "check", options: [{ value: "check", label: "Check: ... and 56/100 dollars" }, { value: "words", label: "Words: ... dollars and fifty-six cents" }, { value: "plain", label: "Plain number words" }] }, { type: "text", key: "currency", label: "Currency word", default: "dollar" }],
+  },
+  {
+    id: "number-stats", name: "Sum & statistics of numbers", category: "utilities", description: "Paste any numbers (commas, $ and (negatives) understood): sum, average, median, min, max, standard deviation.", keywords: ["sum numbers", "add up", "average", "median", "statistics", "total of list"], input: [], output: ["txt"], processor: "utilities.numberStats", kind: "text", status: "ready", runtime: "browser", icon: "Sigma", inputPlaceholder: "1,250.00\n(300)\n$45.10",
+  },
+  {
+    id: "number-sequence", name: "Number sequence generator", category: "utilities", description: "Arithmetic, geometric, Fibonacci, primes or squares, with padding and separators.", keywords: ["sequence", "generate numbers", "range", "primes", "fibonacci", "invoice numbers"], input: [], output: ["txt"], processor: "utilities.sequence", kind: "calculator", status: "ready", runtime: "browser", icon: "ListOrdered",
+    options: [{ type: "select", key: "mode", label: "Type", default: "arithmetic", options: [{ value: "arithmetic", label: "Arithmetic (start, step)" }, { value: "geometric", label: "Geometric (start × ratio)" }, { value: "fibonacci", label: "Fibonacci" }, { value: "primes", label: "Primes from start" }, { value: "squares", label: "Squares" }] }, { type: "number", key: "start", label: "Start", default: 1 }, { type: "number", key: "step", label: "Step / ratio", default: 1 }, { type: "number", key: "count", label: "How many", default: 10, min: 1, max: 10000 }, { type: "number", key: "pad", label: "Zero-pad to digits (0 = none)", default: 0, min: 0, max: 12 }, { type: "select", key: "separator", label: "Separator", default: "newline", options: [{ value: "newline", label: "New line" }, { value: "comma", label: "Comma" }, { value: "space", label: "Space" }] }],
+  },
+  {
+    id: "random-numbers", name: "Random number generator", category: "utilities", description: "Cryptographically random numbers in a range, optionally unique and sorted (lottery, sampling, test data).", keywords: ["random number", "dice", "lottery", "sample", "pick numbers"], input: [], output: ["txt"], processor: "utilities.randomNumbers", kind: "calculator", status: "ready", runtime: "browser", icon: "Dices",
+    options: [{ type: "number", key: "min", label: "Min", default: 1 }, { type: "number", key: "max", label: "Max", default: 100 }, { type: "number", key: "count", label: "How many", default: 10, min: 1, max: 10000 }, { type: "number", key: "decimals", label: "Decimals", default: 0, min: 0, max: 6 }, { type: "checkbox", key: "unique", label: "No repeats", default: false }, { type: "checkbox", key: "sort", label: "Sort ascending", default: false }],
+  },
+  {
+    id: "byte-converter", name: "Bytes & bits converter", category: "utilities", description: "KB, MB, GB, TB (decimal) vs KiB, MiB, GiB (binary) and bits, all at once.", keywords: ["bytes", "megabytes", "gigabytes", "mib", "file size units", "bits"], input: [], output: ["txt"], processor: "utilities.byteConverter", kind: "calculator", status: "ready", runtime: "browser", icon: "HardDrive",
+    options: [{ type: "number", key: "value", label: "Value", default: 1, step: 0.001 }, { type: "text", key: "from", label: "Unit", default: "GB", placeholder: "B, KB, MB, GB, TB, KiB, MiB, GiB, bit, Mbit" }],
+  },
+  {
+    id: "time-decimal", name: "Time ↔ decimal hours (timesheets)", category: "utilities", description: "7:45 → 7.75 h and back, one entry per line with a total. Optional rounding to 6 or 15 minutes for billing.", keywords: ["decimal hours", "timesheet", "billable hours", "7.75", "minutes to decimal", "hours to decimal"], input: [], output: ["txt"], processor: "utilities.timeDecimal", kind: "text", status: "ready", runtime: "browser", icon: "Clock", inputPlaceholder: "7:45\n1h 20m\n0:50",
+    options: [{ type: "select", key: "mode", label: "Direction", default: "toDecimal", options: [{ value: "toDecimal", label: "h:mm → decimal" }, { value: "toTime", label: "decimal → h:mm" }] }, { type: "select", key: "round", label: "Round to", default: "0", options: [{ value: "0", label: "Exact" }, { value: "6", label: "6 minutes (0.1 h)" }, { value: "15", label: "15 minutes" }, { value: "30", label: "30 minutes" }] }],
+  },
+  {
+    id: "duration-converter", name: "Duration converter", category: "utilities", description: "Seconds, minutes, hours, days, weeks, months, years and work days/weeks, plus h:mm:ss.", keywords: ["seconds to hours", "days to hours", "hours to days", "duration", "convert time", "work days"], input: [], output: ["txt"], processor: "utilities.durationConvert", kind: "calculator", status: "ready", runtime: "browser", icon: "Hourglass",
+    options: [{ type: "number", key: "value", label: "Value", default: 1, step: 0.01 }, { type: "select", key: "from", label: "Unit", default: "hours", options: ["milliseconds", "seconds", "minutes", "hours", "days", "weeks", "months", "years", "work days (8h)", "work weeks (40h)"].map((u) => ({ value: u, label: u })) }],
+  },
+  {
+    id: "leap-year", name: "Leap year checker", category: "utilities", description: "Check years or list every leap year in a range.", keywords: ["leap year", "february 29", "366 days"], input: [], output: ["txt"], processor: "utilities.leapYear", kind: "text", status: "ready", runtime: "browser", icon: "CalendarDays", inputPlaceholder: "2024 2025 2100",
+    options: [{ type: "select", key: "mode", label: "Mode", default: "check", options: [{ value: "check", label: "Check the years I enter" }, { value: "list", label: "List leap years in a range" }] }, { type: "number", key: "from", label: "From year", default: 2000 }, { type: "number", key: "to", label: "To year", default: 2100 }],
   }
 ];

@@ -352,3 +352,4 @@ export const palette: FileProcessor = async (files, { options }) => {
   const single = results.length === 1 ? results[0] : results;
   return { ...jsonOutput(single), text: results.map((r) => r.colors.map((c) => `${c.hex}  ${c.share}`).join("\n")).join("\n\n") };
 };
+export { opacity, colorToTransparent, splitGrid } from "./extra";

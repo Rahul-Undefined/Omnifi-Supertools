@@ -594,4 +594,17 @@ export const documentTools: ToolDefinition[] = [
   { id: "pdf-to-excel", name: "PDF to Excel", category: "documents", description: "Convert PDF tables to XLSX.", keywords: ["pdf to excel", "xlsx"], input: pdf, output: ["xlsx"], processor: "server.libreoffice", kind: "file", status: "coming-soon", runtime: "server", icon: "FileSpreadsheet" },
   { id: "pdf-to-powerpoint", name: "PDF to PowerPoint", category: "documents", description: "Convert PDF pages to PPTX slides.", keywords: ["pdf to pptx", "powerpoint"], input: pdf, output: ["pptx"], processor: "server.libreoffice", kind: "file", status: "coming-soon", runtime: "server", icon: "Presentation" },
   { id: "summarize-pdf", name: "PDF summarization", category: "documents", description: "Summarize a PDF with the configured AI provider.", keywords: ["summarize", "summary", "ai"], input: pdf, output: ["txt"], processor: "ai.summarizeFile", kind: "file", status: "ready", runtime: "server", icon: "Sparkles", related: ["ai-summarize"] },
+  {
+    id: "pdf-editor", name: "PDF editor", category: "documents", description: "Add text, highlights, boxes, free-hand drawing, check marks, white-out and images on any page, then save. Edits are burned into the page so every viewer shows them.", keywords: ["edit pdf", "annotate", "add text to pdf", "highlight pdf", "draw on pdf", "whiteout", "markup", "fill by hand"], input: ["pdf"], output: ["pdf"], processor: "custom.pdfEditor", kind: "custom", status: "ready", runtime: "browser", icon: "PenTool", related: ["redact-pdf", "sign-pdf", "fill-pdf-form", "organize-pdf"],
+  },
+  {
+    id: "pdf-extract-images", name: "Extract images from PDF", category: "documents", description: "Save every embedded picture in a PDF as PNG or JPG files in a ZIP.", keywords: ["extract images", "pdf images", "pictures from pdf", "save images"], input: ["pdf"], output: ["zip"], processor: "pdf.extractPdfImages", kind: "file", status: "ready", runtime: "browser", multiple: true, chainable: true, icon: "Images",
+    options: [{ type: "select", key: "format", label: "Format", default: "image/png", options: [{ value: "image/png", label: "PNG" }, { value: "image/jpeg", label: "JPG" }] }, { type: "number", key: "minSize", label: "Ignore images smaller than (px)", default: 64, min: 1 }],
+    related: ["pdf-to-image", "pptx-image-extractor"],
+  },
+  {
+    id: "pdf-to-epub", name: "PDF to EPUB", category: "documents", description: "Reflow a text PDF into an EPUB e-book with chapters per page group or detected headings. Layout is not preserved; scanned PDFs need OCR first.", keywords: ["pdf to epub", "ebook", "kindle", "reflow", "ereader"], input: ["pdf"], output: ["epub"], processor: "pdf.toEpub", kind: "file", status: "ready", runtime: "browser", multiple: true, chainable: true, icon: "BookOpen",
+    options: [{ type: "text", key: "title", label: "Book title (blank = file name)", default: "" }, { type: "text", key: "author", label: "Author", default: "" }, { type: "select", key: "chapters", label: "Chapters", default: "pages", options: [{ value: "pages", label: "Every N pages" }, { value: "headings", label: "Detect headings" }] }, { type: "number", key: "pagesPerChapter", label: "Pages per chapter", default: 1, min: 1 }, { type: "text", key: "language", label: "Language code", default: "en" }],
+    related: ["extract-pdf-text", "ocr-pdf"],
+  }
 ];

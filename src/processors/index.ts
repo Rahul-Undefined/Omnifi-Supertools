@@ -13,6 +13,7 @@ const families: Record<string, Loader> = {
   media: () => import("./media"),
   office: () => import("./office"),
   pptx: () => import("./pptx"),
+  data: () => import("./data"),
   docx: () => import("./docx"),
   finance: () => import("./finance"),
   dev: () => import("./dev"),

@@ -93,7 +93,7 @@ export const officeTools: ToolDefinition[] = [
     runtime: "browser",
     multiple: true,
     chainable: true,
-    icon: "SplitSquareHorizontal",
+    icon: "SquareSplitHorizontal",
     options: [
       { type: "text", key: "column", label: "Column header", default: "", placeholder: "Full Name" },
       { type: "text", key: "delimiter", label: "Delimiter", default: " " },
@@ -365,5 +365,42 @@ export const officeTools: ToolDefinition[] = [
     icon: "ScanSearch",
     options: [{ type: "checkbox", key: "includeList", label: "Include a sheet listing every formula", default: true }],
     related: ["excel-formula-explainer", "excel-compare"],
+  },
+  {
+    id: "csv-to-json", name: "CSV to JSON", category: "office", description: "Paste CSV or upload a CSV/XLSX; get JSON records (numbers and booleans typed) or column arrays.", keywords: ["csv to json", "convert csv", "json records", "spreadsheet to json"], input: ["csv", "tsv", "txt", "xlsx", "xls"], output: ["json"], processor: "data.csvToJsonFile", kind: "file", status: "ready", runtime: "browser", multiple: true, chainable: true, icon: "Braces",
+    options: [{ type: "select", key: "separator", label: "Separator", default: "auto", options: [{ value: "auto", label: "Detect" }, { value: "comma", label: "Comma" }, { value: "semicolon", label: "Semicolon" }, { value: "tab", label: "Tab" }, { value: "pipe", label: "Pipe" }] }, { type: "select", key: "shape", label: "Shape", default: "records", options: [{ value: "records", label: "Array of objects" }, { value: "columns", label: "Object of columns" }] }, { type: "checkbox", key: "typed", label: "Convert numbers and booleans", default: true }, { type: "checkbox", key: "minify", label: "Minify", default: false }],
+    related: ["json-to-csv", "csv-to-excel"],
+  },
+  {
+    id: "json-to-csv", name: "JSON to CSV / Excel", category: "office", description: "Paste a JSON array of objects (nested objects are flattened to dotted columns) and get CSV plus an Excel file.", keywords: ["json to csv", "json to excel", "api response to spreadsheet", "flatten json"], input: [], output: ["csv", "xlsx"], processor: "data.jsonToCsv", kind: "text", status: "ready", runtime: "browser", icon: "Table2", inputPlaceholder: '[{"name":"Acme","amount":100},{"name":"Globex","amount":50}]',
+    options: [{ type: "text", key: "path", label: "Path to the array (optional)", default: "", placeholder: "data.items" }, { type: "checkbox", key: "flatten", label: "Flatten nested objects", default: true }, { type: "select", key: "separator", label: "CSV separator", default: "comma", options: [{ value: "comma", label: "Comma" }, { value: "semicolon", label: "Semicolon" }, { value: "tab", label: "Tab" }] }],
+    related: ["csv-to-json"],
+  },
+  {
+    id: "csv-to-xml", name: "CSV to XML", category: "office", description: "Each row becomes an element; headers become tags.", keywords: ["csv to xml", "xml export"], input: ["csv", "tsv", "txt", "xlsx", "xls"], output: ["xml"], processor: "data.csvToXmlFile", kind: "file", status: "ready", runtime: "browser", multiple: true, chainable: true, icon: "Code",
+    options: [{ type: "text", key: "root", label: "Root element", default: "rows" }, { type: "text", key: "item", label: "Row element", default: "row" }, { type: "select", key: "separator", label: "Separator", default: "auto", options: [{ value: "auto", label: "Detect" }, { value: "comma", label: "Comma" }, { value: "semicolon", label: "Semicolon" }, { value: "tab", label: "Tab" }] }],
+  },
+  {
+    id: "csv-to-yaml", name: "CSV to YAML", category: "office", description: "Rows become a YAML list of mappings.", keywords: ["csv to yaml", "yaml export"], input: ["csv", "tsv", "txt", "xlsx", "xls"], output: ["yaml"], processor: "data.csvToYamlFile", kind: "file", status: "ready", runtime: "browser", multiple: true, chainable: true, icon: "FileCode",
+    options: [{ type: "select", key: "separator", label: "Separator", default: "auto", options: [{ value: "auto", label: "Detect" }, { value: "comma", label: "Comma" }, { value: "semicolon", label: "Semicolon" }, { value: "tab", label: "Tab" }] }],
+  },
+  {
+    id: "csv-separator", name: "Change CSV separator", category: "office", description: "Comma ↔ semicolon ↔ tab ↔ pipe, with quoting handled correctly (CSV ↔ TSV included).", keywords: ["csv separator", "delimiter", "semicolon csv", "tsv to csv", "csv to tsv", "european csv"], input: [], output: ["csv"], processor: "data.changeSeparator", kind: "text", status: "ready", runtime: "browser", icon: "ArrowLeftRight", inputPlaceholder: "name;amount\nAcme;100",
+    options: [{ type: "select", key: "from", label: "From", default: "auto", options: [{ value: "auto", label: "Detect" }, { value: "comma", label: "Comma" }, { value: "semicolon", label: "Semicolon" }, { value: "tab", label: "Tab" }, { value: "pipe", label: "Pipe" }] }, { type: "select", key: "to", label: "To", default: "comma", options: [{ value: "comma", label: "Comma" }, { value: "semicolon", label: "Semicolon" }, { value: "tab", label: "Tab" }, { value: "pipe", label: "Pipe" }] }],
+  },
+  {
+    id: "csv-transpose", name: "Transpose CSV (rows ↔ columns)", category: "office", description: "Swap rows and columns of pasted CSV or an uploaded file.", keywords: ["transpose", "rows to columns", "columns to rows", "flip table"], input: ["csv", "tsv", "txt", "xlsx", "xls"], output: ["csv"], processor: "data.transposeCsvFile", kind: "file", status: "ready", runtime: "browser", multiple: true, chainable: true, icon: "Split",
+  },
+  {
+    id: "csv-swap-columns", name: "Swap CSV columns", category: "office", description: "Swap two columns by header name or number.", keywords: ["swap columns", "reorder columns", "move column"], input: [], output: ["csv"], processor: "data.swapColumns", kind: "text", status: "ready", runtime: "browser", icon: "ArrowLeftRight",
+    options: [{ type: "text", key: "a", label: "Column A (name or number)", default: "1" }, { type: "text", key: "b", label: "Column B", default: "2" }],
+  },
+  {
+    id: "csv-insert-column", name: "Insert CSV column", category: "office", description: "Add a column with a fixed value, a row number, or a value built from other columns like {first} {last}.", keywords: ["insert column", "add column", "row number", "computed column"], input: [], output: ["csv"], processor: "data.insertColumn", kind: "text", status: "ready", runtime: "browser", icon: "Columns3",
+    options: [{ type: "text", key: "name", label: "Column header", default: "new_column" }, { type: "text", key: "position", label: "Next to column (name or number, blank = end)", default: "" }, { type: "select", key: "where", label: "Place", default: "after", options: [{ value: "after", label: "After it" }, { value: "before", label: "Before it" }] }, { type: "select", key: "mode", label: "Value", default: "value", options: [{ value: "value", label: "Fixed value" }, { value: "index", label: "Row number" }, { value: "formula", label: "From other columns {header}" }] }, { type: "text", key: "fill", label: "Value / template", default: "" }],
+  },
+  {
+    id: "csv-incomplete-rows", name: "Find incomplete CSV rows", category: "office", description: "Lists rows with missing or extra fields and empty cells, and splits the file into complete and incomplete rows.", keywords: ["incomplete rows", "missing fields", "validate csv", "broken csv", "empty cells"], input: ["csv", "tsv", "txt", "xlsx", "xls"], output: ["csv"], processor: "data.incompleteRowsFile", kind: "file", status: "ready", runtime: "browser", multiple: true, chainable: true, icon: "ListChecks",
+    options: [{ type: "checkbox", key: "emptyIsIncomplete", label: "Treat empty cells as incomplete", default: true }],
   }
 ];
