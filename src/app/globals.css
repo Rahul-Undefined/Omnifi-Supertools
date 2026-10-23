@@ -249,3 +249,10 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .hero-blob, .hero-grid, .hero-motif, .hero-motif-2 { animation: none !important; }
 }
+
+/* Search inputs sit inside their own styled pill; the global focus ring would draw a second box inside it. */
+input[data-global-search]:focus-visible,
+input[cmdk-input]:focus-visible {
+  outline: none;
+  box-shadow: none;
+}

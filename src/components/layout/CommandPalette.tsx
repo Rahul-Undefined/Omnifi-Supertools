@@ -45,7 +45,7 @@ export function CommandPalette() {
   const favTools = favorites.slice(0, 5).map((id) => getTool(id)).filter(Boolean);
 
   return (
-    <Command.Dialog open={open} onOpenChange={setOpenAndReset} label="Search tools" shouldFilter={false} className="fixed inset-0 z-[60]" overlayClassName="fixed inset-0 bg-navy-900/50 backdrop-blur-sm" contentClassName="fixed left-1/2 top-[12vh] w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-control border border-border bg-surface shadow-float overflow-hidden animate-fade-up">
+    <Command.Dialog open={open} onOpenChange={setOpenAndReset} label="Search tools" shouldFilter={false} className="w-full" overlayClassName="fixed inset-0 z-[60] bg-navy-900/50 backdrop-blur-sm" contentClassName="fixed z-[61] left-1/2 top-[12vh] w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-control border border-border bg-surface shadow-float overflow-hidden animate-fade-up">
       <div className="flex items-center gap-3 border-b border-border px-4">
         <Search className="h-4 w-4 text-muted shrink-0" />
         <Command.Input value={query} onValueChange={setQuery} placeholder="What do you want to do?" className="h-14 flex-1 bg-transparent text-base text-foreground placeholder:text-muted/70 outline-none" autoFocus />
