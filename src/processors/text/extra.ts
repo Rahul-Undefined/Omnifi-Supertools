@@ -39,7 +39,7 @@ export const hiddenChars: TextProcessor = async (input, { options }) => {
   let lineNo = 1; let col = 0;
   const report: string[] = [];
   for (const ch of chars) {
-    if (ch === "\n") { lineNo++; col = 0; pos++; continue; }
+    if (ch === "\n") { lineNo++; col = 0; continue; }
     col++;
     const code = ch.codePointAt(0)!;
     const name = INVISIBLE[ch] ?? (code >= 0x7f && code <= 0x9f ? "control character" : code < 0x20 && ch !== "\t" && ch !== "\r" ? "control character" : /\p{Cf}/u.test(ch) ? "format character" : null);
