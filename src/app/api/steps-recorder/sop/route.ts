@@ -23,8 +23,8 @@ const stepSchema = z.object({
   button: z.enum(["left", "right", "middle"]),
   x: z.number().int(),
   y: z.number().int(),
-  endX: z.number().int().optional(),
-  endY: z.number().int().optional(),
+  endX: z.number().int().nullish(),
+  endY: z.number().int().nullish(),
   window: z.string().max(300).default(""),
   process: z.string().max(100).default(""),
   elementType: z.string().max(100).default(""),
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
     for (const s of recording.steps) {
       const kind = s.kind === "selection" ? "SELECTION (drag)" : `${s.button.toUpperCase()} CLICK`;
       let line = `Step ${s.n}: ${kind} at (${s.x}, ${s.y})`;
-      if (s.kind === "selection" && s.endX !== undefined && s.endY !== undefined) line += ` to (${s.endX}, ${s.endY})`;
+      if (s.kind === "selection" && s.endX != null && s.endY != null) line += ` to (${s.endX}, ${s.endY})`;
       if (s.window) line += ` in window "${s.window}"`;
       if (s.process) line += ` (${s.process}.exe)`;
       if (s.elementType || s.elementName) line += `; UI element: ${s.elementType}${s.elementName ? ` "${s.elementName}"` : ""}`;
