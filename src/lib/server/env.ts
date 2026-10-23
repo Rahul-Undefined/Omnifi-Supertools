@@ -65,6 +65,9 @@ export const env = {
   rateAuth: Number(str("RATE_LIMIT_AUTH_PER_MIN", "10")),
   /** Daily quotas per user (or per client IP when anonymous). 0 disables. */
   quotaAiPerDay: Number(str("QUOTA_AI_PER_DAY", "300")),
+  /** Per-person AI allowance: N requests per window (like a chat assistant's "15 messages per 3 hours"). Cache hits are free. */
+  aiUserQuota: Number(str("AI_USER_QUOTA", "15")),
+  aiUserWindowHours: Number(str("AI_USER_WINDOW_HOURS", "3")),
   quotaWebPerDay: Number(str("QUOTA_WEB_PER_DAY", "2000")),
   /** Retention in days; records older than this are purged automatically. */
   retentionUsageDays: Number(str("RETENTION_USAGE_DAYS", "90")),

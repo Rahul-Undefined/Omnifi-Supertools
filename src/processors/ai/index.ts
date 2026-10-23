@@ -2,6 +2,7 @@ import type { FileProcessor, TextProcessor } from "@/types/processor";
 import { ProcessorError } from "@/types/processor";
 import { fileFromText } from "../shared/output";
 import { baseName } from "@/lib/utils";
+import { setAllowance, type Allowance } from "@/components/ai/AiQuota";
 
 /**
  * AI processors post to /api/ai/run. The server holds provider credentials;
@@ -9,15 +10,19 @@ import { baseName } from "@/lib/utils";
  * browser first (PDF, DOCX, TXT) so raw documents never leave the machine
  * unless they are scanned images (which are sent for OCR-free extraction).
  */
-async function run(task: string, input: string, options: Record<string, unknown>, signal?: AbortSignal): Promise<{ text: string; model: string; usage?: { input: number; output: number }; cached?: boolean }> {
+async function run(task: string, input: string, options: Record<string, unknown>, signal?: AbortSignal): Promise<{ text: string; model?: string; usage?: { input: number; output: number }; cached?: boolean; allowance?: Allowance }> {
   const res = await fetch("/api/ai/run", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ task, input, options }), signal });
   const data = await res.json().catch(() => ({}));
+  if (data?.allowance) setAllowance(data.allowance as Allowance);
   if (!res.ok) throw new ProcessorError(data.error ?? `AI request failed (${res.status})`, data.hint);
   return data;
 }
 
-function finish(task: string, r: { text: string; model: string; usage?: { input: number; output: number }; cached?: boolean }, ext = "txt") {
-  const stats: Record<string, string> = { Model: r.cached ? `${r.model} (cached, free)` : r.model };
+function finish(task: string, r: { text: string; model?: string; usage?: { input: number; output: number }; cached?: boolean; allowance?: Allowance }, ext = "txt") {
+  const stats: Record<string, string> = {};
+  if (r.cached) stats.Source = "cache (did not use your allowance)";
+  if (r.model) stats.Model = r.model; // only present for admins
+  if (r.allowance && r.allowance.limit > 0) stats["AI requests left"] = `${r.allowance.remaining} of ${r.allowance.limit}`;
   if (r.usage) stats.Tokens = `${r.usage.input.toLocaleString()} in / ${r.usage.output.toLocaleString()} out`;
   const mime = ext === "json" ? "application/json" : ext === "csv" ? "text/csv" : "text/plain";
   return { files: [fileFromText(`${task}.${ext}`, r.text, mime)], text: r.text, stats };

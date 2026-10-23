@@ -32,6 +32,11 @@ services:
         value: "200"
       - key: AI_CACHE_DAYS
         value: "7"
+      # Personal allowance: 15 AI requests per 3 hours per signed-in person (cache hits are free).
+      - key: AI_USER_QUOTA
+        value: "15"
+      - key: AI_USER_WINDOW_HOURS
+        value: "3"
       - key: ANTHROPIC_API_KEY
         sync: false
       # REQUIRED in production: at least one sign-in method must exist (ADMIN_PASSWORD, USERS_JSON, Microsoft,

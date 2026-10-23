@@ -15,6 +15,7 @@ import { ProgressBar } from "./ProgressBar";
 import { ResultPanel } from "./ResultPanel";
 import { BatchList, type BatchItem } from "./BatchList";
 import { site } from "@/config/site";
+import { AiQuotaWidget, useAiStatus } from "@/components/ai/AiQuota";
 import { cn } from "@/lib/utils";
 
 type Phase = "idle" | "running" | "done" | "error";
@@ -35,7 +36,7 @@ export function ToolRunner({ tool, initialText = "" }: Props) {
   const [output, setOutput] = useState<ProcessorOutput | null>(null);
   const [error, setError] = useState<{ message: string; hint?: string } | null>(null);
   const [batch, setBatch] = useState<BatchItem[]>([]);
-  const [aiStatus, setAiStatus] = useState<{ configured: boolean; provider?: string; hint?: string } | null>(null);
+  const aiStatus = useAiStatus();
   const abortRef = useRef<AbortController | null>(null);
   const touchRecent = usePrefs((s) => s.touchRecent);
   const recordUse = usePrefs((s) => s.recordUse);
@@ -54,11 +55,6 @@ export function ToolRunner({ tool, initialText = "" }: Props) {
   useEffect(() => {
     touchRecent(tool.id);
   }, [tool.id, touchRecent]);
-
-  useEffect(() => {
-    if (!isAi) return;
-    fetch("/api/ai/status").then((r) => r.json()).then(setAiStatus).catch(() => setAiStatus({ configured: false }));
-  }, [isAi]);
 
   const reset = useCallback(() => {
     abortRef.current?.abort();
@@ -188,7 +184,7 @@ export function ToolRunner({ tool, initialText = "" }: Props) {
       {tool.runtime === "server" ? (
         <p className="flex items-start gap-2.5 rounded-control border border-border bg-surface-2 px-4 py-3 text-sm text-body">
           <Server className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-          <span>{isAi ? "Your text is sent to the configured AI provider through the Omnifi server. Nothing is stored." : tool.processor === "utilities.currency" ? "Only exchange rates come from the server (refreshed hourly from a public feed). Your amounts never leave this page." : "Your input is sent to the Omnifi server for processing. Uploaded files are temporarily processed and automatically deleted afterwards. Nothing is stored."}</span>
+          <span>{isAi ? "Your text is sent to Omnifi's AI provider through the Omnifi server. Nothing is stored." : tool.processor === "utilities.currency" ? "Only exchange rates come from the server (refreshed hourly from a public feed). Your amounts never leave this page." : "Your input is sent to the Omnifi server for processing. Uploaded files are temporarily processed and automatically deleted afterwards. Nothing is stored."}</span>
         </p>
       ) : (
         <p className="flex items-start gap-2.5 rounded-control border border-border bg-surface-2 px-4 py-3 text-sm text-body">
@@ -197,10 +193,12 @@ export function ToolRunner({ tool, initialText = "" }: Props) {
         </p>
       )}
 
+      {isAi && aiStatus?.configured && <div className="rounded-control border border-border bg-surface px-4 py-2.5"><AiQuotaWidget /></div>}
+
       {aiBlocked && (
         <div className="rounded-control border border-warning/40 bg-warning-soft px-4 py-3 text-sm text-foreground">
-          <p className="flex items-center gap-2 font-medium"><Sparkles className="h-4 w-4 text-warning" /> AI provider is not configured</p>
-          <p className="mt-1 text-body">{aiStatus?.hint ?? "Ask an administrator to set AI_PROVIDER and the matching API key in the server environment. See docs/DEPLOYMENT.md."}</p>
+          <p className="flex items-center gap-2 font-medium"><Sparkles className="h-4 w-4 text-warning" /> AI tools are not available yet</p>
+          <p className="mt-1 text-body">{aiStatus?.hint ?? "An administrator needs to connect an AI provider on the server."}</p>
         </div>
       )}
 

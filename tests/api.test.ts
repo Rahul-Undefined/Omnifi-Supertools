@@ -22,6 +22,7 @@ vi.mock("@/lib/server/store", () => ({ store: () => ({
   listAccounts: async () => [], getAccount: async () => null, saveAccount: async () => {}, deleteAccount: async () => {},
   getPrefs: async () => null, savePrefs: async () => {},
   rateHit: async (key: string, start: number) => { const c = counters.get(key); const n = c && c.start === start ? c.count + 1 : 1; counters.set(key, { start, count: n }); return n; },
+  ratePeek: async (key: string, start: number) => { const c = counters.get(key); return c && c.start === start ? c.count : 0; },
   cacheGet: async (key: string) => cache.get(key) ?? null, cacheSet: async (key: string, value: string) => { cache.set(key, value); },
   purge: async () => ({}),
   kind: "mock",
@@ -154,6 +155,41 @@ describe("AI run: free-tier controls", () => {
     } finally {
       globalThis.fetch = realFetch;
       for (const k of ["AI_PROVIDER", "GEMINI_API_KEY", "AI_GLOBAL_PER_MIN", "AI_CACHE_DAYS"]) delete process.env[k];
+    }
+  });
+});
+
+describe("AI run: personal allowance and admin-only model info", () => {
+  it("counts 15 per window per person, hides the model from non-admins, and cache hits are free", async () => {
+    vi.resetModules();
+    process.env.AI_PROVIDER = "gemini";
+    process.env.GEMINI_API_KEY = "test-key-not-real";
+    process.env.AI_USER_QUOTA = "2";
+    process.env.AI_USER_WINDOW_HOURS = "3";
+    process.env.AI_GLOBAL_PER_MIN = "0";
+    process.env.ADMIN_PASSWORD = "x"; // sign-in required -> currentUser must be mocked
+    vi.doMock("@/lib/server/auth", async () => { const real = await vi.importActual<typeof import("@/lib/server/auth")>("@/lib/server/auth"); return { ...real, currentUser: async () => ({ id: "priya@myomnifi.com", name: "Priya", email: "priya@myomnifi.com", role: "user" as const }), requireUser: async () => ({ id: "priya@myomnifi.com", name: "Priya", email: "priya@myomnifi.com", role: "user" as const }) }; });
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async () => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: "ok" }] }, finishReason: "STOP" }], modelVersion: "gemini-x" }), { status: 200 })) as typeof fetch;
+    try {
+      const { POST } = await import("@/app/api/ai/run/route");
+      const call = (input: string) => POST(json("/api/ai/run", { task: "subjectLines", input, options: {} }));
+      const a = await (await call("one")).json();
+      expect(a.model).toBeUndefined(); // non-admin never sees the model
+      expect(a.allowance).toMatchObject({ limit: 2, used: 1, remaining: 1 });
+      const again = await (await call("one")).json();
+      expect(again.cached).toBe(true);
+      expect(again.allowance.used).toBe(1); // cache hit did not consume
+      await call("two");
+      const third = await call("three");
+      expect(third.status).toBe(429);
+      const body = await third.json();
+      expect(body.hint).toMatch(/per 3 hours/);
+      expect(body.allowance.remaining).toBe(0);
+    } finally {
+      globalThis.fetch = realFetch;
+      vi.doUnmock("@/lib/server/auth");
+      for (const k of ["AI_PROVIDER", "GEMINI_API_KEY", "AI_USER_QUOTA", "AI_USER_WINDOW_HOURS", "AI_GLOBAL_PER_MIN", "ADMIN_PASSWORD"]) delete process.env[k];
     }
   });
 });

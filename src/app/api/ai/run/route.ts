@@ -6,7 +6,7 @@ import { tasks } from "@/lib/server/ai-tasks";
 import { env } from "@/lib/server/env";
 import { requireUser, isSameOrigin } from "@/lib/server/auth";
 import { store } from "@/lib/server/store";
-import { rateLimit, dailyQuota, clientKey } from "@/lib/server/ratelimit";
+import { rateLimit, dailyQuota, clientKey, consumeAllowance, peekAllowance } from "@/lib/server/ratelimit";
 import { handleError, jsonError, readJson } from "@/lib/server/api";
 
 const schema = z.object({
@@ -43,10 +43,24 @@ export async function POST(req: Request) {
     const cacheKey = createHash("sha256").update(`${task}\n${model}\n${spec.system}\n${prompt}`).digest("hex");
     const cacheMs = env.aiCacheDays * 86_400_000;
     const cached = cacheMs > 0 ? await store().cacheGet(cacheKey, cacheMs) : null;
+    const isAdmin = user.role === "admin";
+    const present = (r: { text: string; model: string; usage?: { input: number; output: number } }, allowance: Awaited<ReturnType<typeof peekAllowance>>, cachedFlag: boolean) => ({
+      text: truncated ? `${r.text}\n\n[Input was truncated to ${cap.toLocaleString()} characters]` : r.text,
+      cached: cachedFlag,
+      allowance,
+      // Provider and model names are admin-only information.
+      ...(isAdmin ? { model: r.model, usage: r.usage } : {}),
+    });
     if (cached) {
       const r = JSON.parse(cached) as { text: string; model: string; usage?: { input: number; output: number } };
       await store().recordAudit({ at: Date.now(), actor: user.id, action: `ai.${task}`, detail: `cache hit, ${input.length} chars` });
-      return NextResponse.json({ ...r, cached: true, text: truncated ? `${r.text}\n\n[Input was truncated to ${cap.toLocaleString()} characters]` : r.text });
+      return NextResponse.json(present(r, await peekAllowance(user.id, env.aiUserQuota, env.aiUserWindowHours), true));
+    }
+    // Personal allowance (e.g. 15 requests per 3 hours), tied to the signed-in account.
+    const mine = await consumeAllowance(user.id, env.aiUserQuota, env.aiUserWindowHours);
+    if (!mine.ok) {
+      const mins = Math.max(1, Math.ceil((mine.resetsAt - Date.now()) / 60_000));
+      return NextResponse.json({ error: "You have used your AI allowance for now", hint: `${mine.limit} AI requests per ${mine.windowHours} hours per person. Yours resets in ${mins >= 60 ? `${Math.floor(mins / 60)} h ${mins % 60} min` : `${mins} min`}. Repeating an identical request is free.`, allowance: mine }, { status: 429, headers: { "retry-after": String(Math.ceil((mine.resetsAt - Date.now()) / 1000)) } });
     }
     // Server-wide pacing keeps the whole team under the provider's free-tier limits.
     if (env.aiGlobalPerMin > 0 && !(await rateLimit("ai:global", env.aiGlobalPerMin)).ok) return NextResponse.json({ error: "The AI tools are busy right now", hint: `The team shares ${env.aiGlobalPerMin} AI requests per minute on the free tier. Try again in a few seconds.` }, { status: 429, headers: { "retry-after": "15" } });
@@ -54,7 +68,7 @@ export async function POST(req: Request) {
     const result = await complete(spec.system, prompt, { json: spec.json, maxTokens: spec.maxTokens, tier: spec.tier });
     if (cacheMs > 0) await store().cacheSet(cacheKey, JSON.stringify(result));
     await store().recordAudit({ at: Date.now(), actor: user.id, action: `ai.${task}`, detail: `${input.length} chars, ${Date.now() - started} ms, ${result.model}` });
-    return NextResponse.json({ ...result, cached: false, text: truncated ? `${result.text}\n\n[Input was truncated to ${cap.toLocaleString()} characters]` : result.text });
+    return NextResponse.json(present(result, mine, false));
   } catch (e) {
     return handleError(e);
   }

@@ -92,6 +92,8 @@ interface Backend {
   savePrefs(userId: string, prefs: UserPrefs): Promise<void>;
   /** Increment a fixed-window counter and return the new count. */
   rateHit(key: string, windowStart: number, windowMs: number): Promise<number>;
+  /** Current count for a window without incrementing. */
+  ratePeek(key: string, windowStart: number): Promise<number>;
   cacheGet(key: string, maxAgeMs: number): Promise<string | null>;
   cacheSet(key: string, value: string): Promise<void>;
   /** Delete records older than the retention periods. Returns counts removed. */
@@ -210,6 +212,10 @@ class FileBackend implements Backend {
     if (keys.length > 2000) for (const k of keys.sort((a, b) => d.aiCache![a].at - d.aiCache![b].at).slice(0, 500)) delete d.aiCache[k];
     this.flush();
   }
+  async ratePeek(key: string, windowStart: number) {
+    const cur = (await this.load()).rates?.[key];
+    return cur && cur.start === windowStart ? cur.count : 0;
+  }
   async purge(r: Retention, now = Date.now()) {
     const d = await this.load();
     if (d.aiCache) for (const [k, v] of Object.entries(d.aiCache)) if (v.at < now - 30 * 86_400_000) delete d.aiCache[k];
@@ -319,6 +325,11 @@ class PgBackend implements Backend {
     );
     if (Math.random() < 0.01) await p.query("DELETE FROM rate_limits WHERE window_start < $1", [Date.now() - windowMs * 2]);
     return Number(r.rows[0].count);
+  }
+  async ratePeek(key: string, windowStart: number) {
+    const p = await this.init();
+    const r = await p.query("SELECT count FROM rate_limits WHERE key = $1 AND window_start = $2", [key, windowStart]);
+    return r.rows.length ? Number(r.rows[0].count) : 0;
   }
   async cacheGet(key: string, maxAgeMs: number) {
     const p = await this.init();
