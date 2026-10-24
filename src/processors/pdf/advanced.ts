@@ -53,26 +53,43 @@ export const protect: FileProcessor = async (files, { options, onProgress }) => 
   return { files: outputs, stats: { Encryption: "AES-256", Files: String(outputs.length) } };
 };
 
+/**
+ * Remove a password. Uses @cantoo/pdf-lib, which implements the standard
+ * security handler (RC4 40/128, AES-128, AES-256 R5/R6, object streams):
+ * every string and stream is decrypted and the /Encrypt entry dropped, so the
+ * text layer, forms and bookmarks survive. Tries the given password as user
+ * and owner password, and an empty password for owner-only protection.
+ */
 export const unlock: FileProcessor = async (files, { options, onProgress }) => {
   const password = String(options.password ?? "");
+  const { PDFDocument: DecDoc } = await import("@cantoo/pdf-lib");
   const outputs: ProcessorFile[] = [];
+  const notes: string[] = [];
   for (let i = 0; i < files.length; i++) {
-    const pdfjs = await import("pdfjs-dist");
-    let src;
-    try {
-      src = await pdfjs.getDocument({ data: new Uint8Array(await files[i].arrayBuffer()), password }).promise;
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "";
-      throw new ProcessorError(/password/i.test(msg) ? "Wrong password" : `Could not open ${files[i].name}`, /password/i.test(msg) ? "Check the password and try again." : undefined);
+    const bytes = await files[i].arrayBuffer();
+    const head = new TextDecoder("latin1").decode(new Uint8Array(bytes));
+    const encrypted = /\/Encrypt\b/.test(head);
+    let doc: Awaited<ReturnType<typeof DecDoc.load>> | null = null;
+    let lastError = "";
+    const candidates = encrypted ? [...new Set([password, password.trim(), ""])] : [""];
+    for (const pw of candidates) {
+      try {
+        doc = await DecDoc.load(bytes, { password: pw, updateMetadata: false });
+        break;
+      } catch (e) {
+        lastError = e instanceof Error ? e.message : String(e);
+        if (!/password/i.test(lastError)) break; // damaged file, not a password problem
+      }
     }
-    // Re-render through pdf.js into a clean, unencrypted document (keeps text layer via saveDocument when available).
-    const data = await src.saveDocument();
-    await closePdf(src);
-    const doc = await PDFDocument.load(data, { ignoreEncryption: true });
-    outputs.push(await save(doc, withSuffix(files[i].name, "-unlocked")));
+    if (!doc) {
+      if (/password/i.test(lastError)) throw new ProcessorError(password ? `Wrong password for ${files[i].name}` : `${files[i].name} needs a password`, "Check for extra spaces or a different keyboard layout. If the PDF opens elsewhere without a prompt, it may be protected with an owner password only: leave the field blank.");
+      throw new ProcessorError(`Could not read ${files[i].name}`, lastError.slice(0, 160) || "The file may be damaged.");
+    }
+    if (!encrypted) notes.push(`${files[i].name} was not password protected; saved as-is.`);
+    outputs.push(fileFromBytes(withSuffix(files[i].name, "-unlocked"), await doc.save({ useObjectStreams: false }), PDF));
     onProgress?.((i + 1) / files.length);
   }
-  return { files: outputs };
+  return { files: outputs, stats: { Files: String(outputs.length) }, warnings: notes };
 };
 
 /* ---------------- Signature / stamp image ---------------- */
