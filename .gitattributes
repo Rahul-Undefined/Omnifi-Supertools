@@ -1,2 +1,9 @@
 *.sh text eol=lf
 Dockerfile text eol=lf
+*.pdf binary
+*.pptx binary
+*.docx binary
+*.xlsx binary
+*.zip binary
+*.png binary
+*.jpg binary
