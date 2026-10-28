@@ -28,9 +28,16 @@ export const extractImages: FileProcessor = async (files, { options, onProgress,
       for (const name of names) {
         if (seen.has(name)) continue;
         seen.add(name);
-        let img: { width: number; height: number; data: Uint8ClampedArray | Uint8Array; kind?: number; bitmap?: ImageBitmap } | null = null;
+        type PdfImg = { width: number; height: number; data: Uint8ClampedArray | Uint8Array; kind?: number; bitmap?: ImageBitmap };
+        let img: PdfImg | null = null;
+        // Images drawn on several pages (logos, letterheads) are shared objects that pdf.js keeps in
+        // commonObjs under a "g_" name; asking page.objs for them would never resolve.
+        const store = name.startsWith("g_") ? page.commonObjs : page.objs;
         try {
-          img = await new Promise((resolve) => { try { page.objs.get(name, (o: unknown) => resolve(o as typeof img)); } catch { resolve(null); } });
+          img = await Promise.race([
+            new Promise<PdfImg | null>((resolve) => { try { store.get(name, (o: unknown) => resolve(o as PdfImg | null)); } catch { resolve(null); } }),
+            new Promise<PdfImg | null>((resolve) => setTimeout(() => resolve(null), 8000)),
+          ]);
         } catch { img = null; }
         if (!img || !img.width || img.width < minPx || img.height < minPx) continue;
         const c = makeCanvas(img.width, img.height);

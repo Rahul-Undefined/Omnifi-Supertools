@@ -70,6 +70,8 @@ Set `status: "coming-soon"`. The tool is listed in a separate block, its page ex
 
 ## 4. Test
 
+Then open `/admin/checker` (admin only) and run the category: it generates random input for the new tool and reports whether it works. If the tool needs a particular input shape or a blank-by-default option filled in, add a case to `specialPlan()` in `src/lib/checker/run.ts` and, if you can, a verification of the output.
+
 Add a case to the relevant file under `tests/`. Processors that only need pdf-lib, SheetJS, JSZip or pure functions run in Node. Canvas-based processors are exercised in the browser.
 
 ```bash

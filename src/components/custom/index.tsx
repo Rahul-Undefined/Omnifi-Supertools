@@ -15,6 +15,9 @@ const components: Record<string, ComponentType> = {
   "custom.stepsRecorder": dynamic(() => import("./StepsRecorderDownload").then((m) => m.StepsRecorderDownload), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-control bg-surface-2" /> }),
 };
 
+/** Processor ids that have an interactive component (used by the tool checker). */
+export const customProcessors = Object.keys(components);
+
 export function CustomTool({ processor }: { processor: string }) {
   const C = components[processor];
   if (!C) return <p className="text-sm text-muted">This interactive tool has no component registered.</p>;

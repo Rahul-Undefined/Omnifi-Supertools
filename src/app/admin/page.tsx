@@ -29,6 +29,11 @@ export default async function AdminPage() {
         <UsersPanel />
       </section>
       <AdminDashboard />
+      <section className="mt-10 rounded-control border border-border bg-surface p-5">
+        <h2 className="text-lg font-semibold text-foreground">Tool checker<span className="brand-dot">.</span></h2>
+        <p className="mt-1 text-sm text-body">Run every tool with random generated input in your browser and get a working / not-working report with comments.</p>
+        <a href="/admin/checker" className="mt-3 inline-flex h-10 items-center rounded-control bg-accent px-4 text-sm font-semibold text-accent-foreground hover:bg-accent-hover">Open the tool checker</a>
+      </section>
     </div>
   );
 }

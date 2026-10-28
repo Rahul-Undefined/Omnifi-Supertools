@@ -27,6 +27,10 @@ npm test
 npm run build
 ```
 
+### Tool checker (admin)
+
+Open `/admin/checker` as an administrator to run every registered tool against freshly generated random input (PDFs, images, spreadsheets, Word and PowerPoint files, audio, video and text are built in the browser). Each tool runs through its real processor, the output is inspected (file headers, page counts, replaced text, decoded values) and the page reports Working / Working with notes / Not working / Manual check / Skipped with a comment per tool. Server tools (network) and AI tools (your AI allowance) are off by default; tick the boxes to include them. Export the report as CSV or JSON. Nothing is uploaded or recorded.
+
 ## Docker
 
 ```bash
