@@ -18,7 +18,7 @@ export const site = {
     { href: "/", label: "Home" },
     { href: "/tools", label: "Tools" },
     { href: "/workflows", label: "Workflows" },
-    { href: "/ai", label: "AI" },
+    { href: "/ai", label: "AI (beta)" },
     { href: "/feedback", label: "Ideas" },
     { href: "https://extropyadvind.sharepoint.com/sites/OmnifiTechHub", label: "Tech Hub", external: true },
   ],

@@ -14,7 +14,7 @@ export const categories: ToolCategory[] = [
   { id: "text", name: "Text", description: "Count, clean, sort, compare and convert text.", icon: "Type" },
   { id: "utilities", name: "Everyday", description: "Time zones, currency conversion, typing test.", icon: "Globe2" },
   { id: "insights", name: "Checks & generators", description: "AI-writing signals, readability, similarity, passwords, test data, invoices, speech.", icon: "Wand2" },
-  { id: "ai", name: "AI", description: "Summarize, extract, translate and rewrite with a configured AI provider.", icon: "Sparkles" },
+  { id: "ai", name: "AI (beta)", description: "Summarize, extract, translate and rewrite with a configured AI provider. Beta: runs on a free tier and can fail under heavy use.", icon: "Sparkles" },
 ];
 
 export const categoryById = Object.fromEntries(categories.map((c) => [c.id, c])) as Record<

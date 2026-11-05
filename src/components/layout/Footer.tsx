@@ -16,7 +16,7 @@ export function Footer() {
             Visit the Omnifi website <ExternalLink className="h-3.5 w-3.5" aria-hidden />
           </a>
         </div>
-        <FooterCol title="Product" links={[["/tools", "All tools"], ["/workflows", "Workflows"], ["/ai", "AI tools"], ["/help", "Help & shortcuts"], ["/trust", "Security & privacy"], ["/feedback", "Share an idea"]]} />
+        <FooterCol title="Product" links={[["/tools", "All tools"], ["/workflows", "Workflows"], ["/ai", "AI tools (beta)"], ["/help", "Help & shortcuts"], ["/trust", "Security & privacy"], ["/feedback", "Share an idea"]]} />
         <FooterCol title="You" links={[["/favorites", "Favorites"], ["/recent", "Recently used"], ["/downloads", "Downloads"]]} />
         <div>
           <h3 className="text-sm font-semibold text-foreground">Omnifi</h3>

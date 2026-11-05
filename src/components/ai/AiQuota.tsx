@@ -62,7 +62,7 @@ export function AiStatusBanner() {
   const b = s.admin?.budget;
   return (
     <div className="mb-8 rounded-control border border-success/40 bg-success-soft px-4 py-3 text-sm text-foreground space-y-2">
-      <p className="font-medium">AI tools are on. Each person gets {s.allowance?.limit ?? 15} requests per {s.allowance?.windowHours ?? 3} hours; repeating an identical request is free.</p>
+      <p className="font-medium">AI tools are on (beta). They run on a free provider tier and can fail or slow down under heavy use; a paid plan with a stronger model is in progress. Each person gets {s.allowance?.limit ?? 15} requests per {s.allowance?.windowHours ?? 3} hours; repeating an identical request is free.</p>
       <AiQuotaWidget />
       {s.admin && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-success/30 pt-2 text-xs text-muted">

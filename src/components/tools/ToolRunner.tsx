@@ -16,6 +16,7 @@ import { ResultPanel } from "./ResultPanel";
 import { BatchList, type BatchItem } from "./BatchList";
 import { site } from "@/config/site";
 import { AiQuotaWidget, useAiStatus } from "@/components/ai/AiQuota";
+import { AiBetaNotice } from "@/components/ai/AiBetaNotice";
 import { cn } from "@/lib/utils";
 
 type Phase = "idle" | "running" | "done" | "error";
@@ -193,7 +194,13 @@ export function ToolRunner({ tool, initialText = "" }: Props) {
         </p>
       )}
 
-      {isAi && aiStatus?.configured && <div className="rounded-control border border-border bg-surface px-4 py-2.5"><AiQuotaWidget /></div>}
+      {isAi && <AiBetaNotice />}
+      {isAi && aiStatus?.configured && (
+        <div className="rounded-control border border-border bg-surface px-4 py-2.5 space-y-1.5">
+          <AiQuotaWidget />
+          <p className="text-xs text-muted">Beta: AI tools run on a free provider tier and can fail or slow down under heavy use. We are moving to a paid plan with a stronger model; sorry for the inconvenience meanwhile.</p>
+        </div>
+      )}
 
       {aiBlocked && (
         <div className="rounded-control border border-warning/40 bg-warning-soft px-4 py-3 text-sm text-foreground">
