@@ -3,29 +3,21 @@ import { useEffect, useState } from "react";
 import { Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
-const KEY = "omnifi.aiBetaNotice.v1";
-
 /**
- * Small pop-up shown the first time an AI tool is opened in a browser session:
- * the AI tools run on a free provider tier and can fail under heavy use.
+ * Small pop-up shown every time an AI tool page is opened: the AI tools run on
+ * a free provider tier and can fail under heavy use. Shown on each open on
+ * purpose (it is easy to ignore the first time).
  */
 export function AiBetaNotice() {
-  // Starts closed so server HTML and the first client render match; opens after mount if not seen this session.
+  // Starts closed so server HTML and the first client render match; opens right after mount.
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => {
-      let seen = false;
-      try { seen = sessionStorage.getItem(KEY) === "1"; } catch { /* storage blocked: show it */ }
-      setOpen(!seen);
-    }, 0);
+    const t = setTimeout(() => setOpen(true), 0);
     return () => clearTimeout(t);
   }, []);
 
-  function dismiss() {
-    try { sessionStorage.setItem(KEY, "1"); } catch { /* ignore */ }
-    setOpen(false);
-  }
+  function dismiss() { setOpen(false); }
 
   useEffect(() => {
     if (!open) return;
