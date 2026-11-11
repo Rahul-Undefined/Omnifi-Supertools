@@ -95,5 +95,16 @@ services:
       - key: KEEP_AWAKE_MINUTES
         value: "10"
       # Optional: free PostgreSQL (e.g. Neon) so usage stats and team feedback survive redeploys.
+      # GitHub-backed persistence (no database needed): private data repo + fine-grained token (Contents: write on that repo only).
+      - key: GITHUB_DATA_REPO
+        value: Rahul-Undefined/Omnifi-Supertools-Data
+      - key: GITHUB_DATA_TOKEN
+        sync: false
+      - key: GITHUB_DATA_BRANCH
+        value: main
+      - key: BACKUP_EVERY_MINUTES
+        value: "60"
+      - key: BACKUP_EXCEL_MINUTE_IST
+        value: "1410"
       - key: DATABASE_URL
         sync: false

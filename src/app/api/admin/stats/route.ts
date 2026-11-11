@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/server/auth";
 import { store } from "@/lib/server/store";
 import { aiStatus, liteModel, activeKey, providerLimits } from "@/lib/server/ai";
+import { backupStatus } from "@/lib/server/github-backup";
 import { env } from "@/lib/server/env";
 import { registryStats, getTool } from "@/tools/registry";
 import { handleError } from "@/lib/server/api";
@@ -102,6 +103,7 @@ export async function GET() {
       audit: snap.audit.slice(-200).reverse(),
       feedback: await store().listFeedback(100),
       system: { uptimeSeconds: Math.round(process.uptime()), memoryMb: Math.round(process.memoryUsage().rss / 1048576), storage: store().kind, storageBytes, ai: aiStatus(), authMode: env.authMode, trustProxyHeaders: env.trustProxyHeaders, retentionDays: { usage: env.retentionUsageDays, audit: env.retentionAuditDays, feedback: env.retentionFeedbackDays, prefs: env.retentionPrefsDays }, queue: "inline (browser-side processing; no server queue configured)" },
+      backup: backupStatus(),
       registry: registryStats(),
       featureFlags: { ai: aiStatus().configured, serverConverters: false, mediaDownloader: false, postgres: Boolean(env.databaseUrl) },
     });

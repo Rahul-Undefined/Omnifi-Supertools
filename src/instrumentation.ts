@@ -7,6 +7,10 @@
  */
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  // GitHub-backed persistence (restore on boot, hourly snapshot, daily Excel, push on shutdown). No-op unless configured.
+  if (process.env.GITHUB_DATA_REPO && process.env.GITHUB_DATA_TOKEN) {
+    try { const { startGithubBackup } = await import("./lib/server/github-backup"); await startGithubBackup(); } catch (e) { console.error("github backup: failed to start", e instanceof Error ? e.message : String(e)); }
+  }
   const enabled = (process.env.KEEP_AWAKE ?? "true").toLowerCase() !== "false";
   const base = (process.env.APP_URL ?? process.env.RENDER_EXTERNAL_URL ?? "").replace(/\/$/, "");
   if (process.env.NODE_ENV !== "production" || !enabled || !base) return;

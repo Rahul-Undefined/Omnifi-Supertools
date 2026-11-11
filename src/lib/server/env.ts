@@ -87,6 +87,14 @@ export const env = {
   retentionAuditDays: Number(str("RETENTION_AUDIT_DAYS", "180")),
   retentionFeedbackDays: Number(str("RETENTION_FEEDBACK_DAYS", "365")),
   retentionPrefsDays: Number(str("RETENTION_PREFS_DAYS", "365")),
+  /** GitHub-backed persistence for the file store: private data repo "owner/name" + fine-grained token with Contents: write on that repo only. */
+  githubDataRepo: str("GITHUB_DATA_REPO"),
+  githubDataToken: str("GITHUB_DATA_TOKEN"),
+  githubDataBranch: str("GITHUB_DATA_BRANCH", "main"),
+  /** Snapshot push interval in minutes (also pushed on shutdown and restored on boot). */
+  backupEveryMinutes: Number(str("BACKUP_EVERY_MINUTES", "60")),
+  /** Daily Excel export is pushed after this time of day in IST, as minutes since midnight (default 23:30). */
+  backupExcelMinuteIst: Number(str("BACKUP_EXCEL_MINUTE_IST", String(23 * 60 + 30))),
 };
 
 export function requireSessionSecret(): string {

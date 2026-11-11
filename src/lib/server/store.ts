@@ -55,7 +55,7 @@ export interface UserPrefs {
   updatedAt: number;
 }
 
-interface Snapshot {
+export interface Snapshot {
   usage: UsageEvent[];
   audit: AuditEvent[];
   users: Record<string, number>; // userId -> last seen
@@ -100,6 +100,8 @@ interface Backend {
   cacheSet(key: string, value: string): Promise<void>;
   /** Delete records older than the retention periods. Returns counts removed. */
   purge(r: Retention, now?: number): Promise<Record<string, number>>;
+  /** Replace the whole store with a snapshot (file backend only; used by the GitHub restore on boot). */
+  importSnapshot?(snap: Snapshot): Promise<void>;
   kind: string;
 }
 
@@ -164,6 +166,12 @@ class FileBackend implements Backend {
     const { rates, ...rest } = await this.load();
     void rates;
     return structuredClone(rest);
+  }
+  async importSnapshot(snap: Snapshot) {
+    await this.load();
+    this.data = { ...snap, rates: this.data?.rates ?? snap.rates };
+    this.flush();
+    await this.writing;
   }
   async listAccounts() {
     return [...((await this.load()).accounts ?? [])];

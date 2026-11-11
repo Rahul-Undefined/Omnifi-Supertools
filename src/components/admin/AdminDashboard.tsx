@@ -21,6 +21,7 @@ interface Person { user: string; runs: number; today: number; week: number; aiRu
 interface Stats {
   ai?: AiStats;
   people?: Person[];
+  backup?: { configured: boolean; repo?: string; branch?: string; lastBackupAt?: number; lastBackupBytes?: number; lastExcelAt?: number; lastExcelPath?: string; restoredAt?: number; restoredFrom?: string; lastError?: string; lastErrorAt?: number };
   users: { total: number; activeToday: number; activeWeek: number };
   usage: { total: number; today: number; week: number; failed: number; cancelled: number; avgMs: number; p95Ms: number };
   popular: { id: string; name: string; runs: number; failed: number; avgMs: number }[];
@@ -89,9 +90,10 @@ export function AdminDashboard() {
 
       <section>
         <H2>People &amp; tools</H2>
-        {s.system.storage !== "postgres" && (
-          <p className="mb-4 rounded-control border border-warning/40 bg-warning-soft px-4 py-3 text-sm text-foreground">Usage data is stored in a file on the server, which is wiped on every deploy. Set DATABASE_URL (a free Neon Postgres works) to keep history, favourites and AI allowances across updates. See docs/DEPLOYMENT.md.</p>
+        {s.system.storage !== "postgres" && !s.backup?.configured && (
+          <p className="mb-4 rounded-control border border-warning/40 bg-warning-soft px-4 py-3 text-sm text-foreground">Usage data is stored in a file on the server, which is wiped on every deploy. Set GITHUB_DATA_REPO + GITHUB_DATA_TOKEN (private data repository) or DATABASE_URL to keep history, favourites and AI allowances across updates. See docs/DEPLOYMENT.md.</p>
         )}
+        <BackupPanel b={s.backup} onDone={load} />
         <PeopleTable people={s.people ?? []} />
       </section>
 
@@ -194,6 +196,38 @@ export function AdminDashboard() {
 
 function H2({ children }: { children: React.ReactNode }) {
   return <h2 className="mb-4 text-lg font-semibold text-foreground">{children}<span className="brand-dot">.</span></h2>;
+}
+
+function BackupPanel({ b, onDone }: { b: Stats["backup"]; onDone: () => void }) {
+  const [busy, setBusy] = useState<"snapshot" | "excel" | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  if (!b?.configured) return null;
+  const run = async (what: "snapshot" | "excel") => {
+    setBusy(what); setMsg(null);
+    try {
+      const res = await fetch("/api/admin/backup", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ what }) });
+      const data = await res.json().catch(() => ({}));
+      setMsg(res.ok ? (data.ok ? `${what === "excel" ? "Excel export" : "Snapshot"} pushed to ${b.repo}.` : data.error ?? "Nothing to push.") : data.error ?? `Failed (${res.status})`);
+      onDone();
+    } catch (e) { setMsg(e instanceof Error ? e.message : String(e)); } finally { setBusy(null); }
+  };
+  const when = (t?: number) => (t ? new Date(t).toLocaleString() : "not yet");
+  return (
+    <div className="mb-4 rounded-control border border-border bg-surface p-4 text-sm">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <span className="font-medium text-foreground">Backup to GitHub: <span className="font-mono text-xs">{b.repo}@{b.branch}</span></span>
+        <span className="text-muted">Last snapshot: {when(b.lastBackupAt)}{b.lastBackupBytes ? ` (${formatBytes(b.lastBackupBytes)})` : ""}</span>
+        <span className="text-muted">Last Excel: {b.lastExcelPath ? `${b.lastExcelPath.replace("exports/", "")} at ${when(b.lastExcelAt)}` : "not yet today"}</span>
+        {b.restoredAt && <span className="text-success">Restored on boot from snapshot saved {b.restoredFrom}</span>}
+        {b.lastError && <span className="text-error">Last error ({when(b.lastErrorAt)}): {b.lastError}</span>}
+        <span className="ml-auto flex gap-2">
+          <Button variant="secondary" size="sm" onClick={() => run("snapshot")} loading={busy === "snapshot"} disabled={busy !== null}>Back up now</Button>
+          <Button variant="secondary" size="sm" onClick={() => run("excel")} loading={busy === "excel"} disabled={busy !== null}>Push Excel now</Button>
+        </span>
+      </div>
+      {msg && <p className="mt-2 text-xs text-body">{msg}</p>}
+    </div>
+  );
 }
 
 function PeopleTable({ people }: { people: Person[] }) {

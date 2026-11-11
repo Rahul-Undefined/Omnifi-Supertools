@@ -10,7 +10,7 @@ Newest first. Dates are when the change went live on https://omnifi-supertools.o
 - **Free-tier safety for Groq:** one request is capped at 22,000 characters (the provider allows 8,000 tokens per minute per model); shared pacing is 6 requests per minute and 200 per day; each person keeps 15 requests per 3 hours; identical requests come from a 7-day cache.
 - **Admin → People & tools:** every signed-in person with the tools they used (click a row for the full list), total runs, distinct tools, AI runs and AI tools, last active.
 - **Admin → AI usage → Provider budget (live):** tokens used today and this week per model, plus the provider's own remaining requests (per day) and tokens (per minute) read from its rate-limit headers after each call.
-- **Durable data:** with `DATABASE_URL` set (free Neon Postgres), usage history, favourites, named accounts and AI allowances survive every deploy. Without it the admin page now shows a warning.
+- **Durable data without a database:** with `GITHUB_DATA_REPO` + `GITHUB_DATA_TOKEN` (a private GitHub data repository), the server restores its snapshot on boot, pushes a fresh snapshot every hour and on shutdown, and publishes a daily Excel export (`exports/usage-YYYY-MM-DD.xlsx`: people summary, people × tools, events, AI usage, feedback, users) after 23:30 IST. Admin shows the backup status with "Back up now" and "Push Excel now". `DATABASE_URL` (Postgres) remains an alternative. Without either, the admin page shows a warning.
 
 ## 2026-11-05 — AI tools marked beta
 
