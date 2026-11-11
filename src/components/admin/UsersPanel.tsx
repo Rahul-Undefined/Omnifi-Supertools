@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Trash2, UserPlus } from "lucide-react";
+import { Trash2, UserPlus, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Select } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Card";
 
-interface Account { username: string; name: string; email: string; role: "admin" | "user"; createdAt: number }
+interface Account { username: string; name: string; email: string; role: "admin" | "user"; createdAt: number; status?: "pending" | "active"; approvedBy?: string; approvedAt?: number }
 interface Info { accounts: Account[]; microsoft: boolean; allowedDomains: string[]; adminEmails: string[]; persistent: boolean }
 
 export function UsersPanel() {
@@ -33,6 +33,14 @@ export function UsersPanel() {
     }
   };
 
+  const approve = async (username: string) => {
+    setMsg(null);
+    const res = await fetch("/api/admin/users", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ username }) });
+    const data = await res.json().catch(() => ({}));
+    setMsg(res.ok ? { ok: true, text: `${username} approved. They can sign in now with their email and password.` } : { ok: false, text: data.error ?? "Could not approve" });
+    await load();
+  };
+
   const remove = async (username: string) => {
     if (!confirm(`Remove ${username}? They will no longer be able to sign in.`)) return;
     await fetch("/api/admin/users", { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ username }) });
@@ -47,6 +55,26 @@ export function UsersPanel() {
         <div className="rounded-control border border-border bg-surface p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted">Admins by email</p><p className="mt-1 text-body">{info.adminEmails.length ? info.adminEmails.join(", ") : "None (set ADMIN_EMAILS)"}</p></div>
         <div className="rounded-control border border-border bg-surface p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted">Account storage</p><p className="mt-1"><Badge tone={info.persistent ? "success" : "warning"}>{info.persistent ? "PostgreSQL" : "Temporary file"}</Badge></p>{!info.persistent && <p className="mt-2 text-xs text-muted">Accounts created here are lost on the next redeploy until DATABASE_URL is set. Microsoft sign-in needs no storage.</p>}</div>
       </div>
+
+      {info.accounts.some((a) => a.status === "pending") && (
+        <div className="rounded-control border border-warning/40 bg-warning-soft p-4">
+          <h3 className="text-sm font-semibold text-foreground">Account requests waiting for approval<span className="brand-dot">.</span></h3>
+          <ul className="mt-3 space-y-2">
+            {info.accounts.filter((a) => a.status === "pending").map((a) => (
+              <li key={a.username} className="flex flex-wrap items-center gap-3 rounded-control border border-border bg-surface px-3 py-2 text-sm">
+                <span className="font-medium text-foreground">{a.name}</span>
+                <span className="font-mono text-xs text-body">{a.email}</span>
+                <span className="text-xs text-muted">requested {new Date(a.createdAt).toLocaleString()}</span>
+                <span className="ml-auto flex gap-2">
+                  <Button size="sm" onClick={() => approve(a.username)}><UserCheck className="h-4 w-4" /> Approve</Button>
+                  <Button size="sm" variant="secondary" onClick={() => remove(a.username)}>Reject</Button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {msg && <p className={`rounded-control-sm px-3.5 py-2.5 text-sm ${msg.ok ? "bg-success-soft text-foreground" : "bg-error-soft text-foreground"}`}>{msg.text}</p>}
 
       <div className="overflow-auto rounded-control border border-border">
         <table className="w-full text-sm">

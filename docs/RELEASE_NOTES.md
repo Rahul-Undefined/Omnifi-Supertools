@@ -4,6 +4,8 @@ Newest first. Dates are when the change went live on https://omnifi-supertools.o
 
 ## 2026-11-11 — Groq AI provider, prompt builder, admin insight, durable data
 
+- **Request an account (self-service, admin approved):** people without an Omnifi Microsoft login click "Request an account" on the login page, enter name, email and a password; the request appears on the admin page under "Account requests waiting for approval" with Approve / Reject; after approval they sign in with that email and password via the "Sign in with username and password" button. Pending accounts cannot sign in and the login page says so. Named accounts live in the store, so the GitHub backup keeps them across deploys.
+
 - **New AI tool: Prompt builder.** Describe what you want in plain words (any language) and get a complete prompt with Role, Context, Task, Constraints, Output format and an example, ready to paste into ChatGPT, Claude, Copilot or any SuperTools AI tool. Options for target use, answer style and prompt length. Runs on the lite model.
 
 - **AI provider switched to Groq** (groq.com, `GROQ_API_KEY`): OpenAI-compatible endpoint, default models `openai/gpt-oss-120b` (standard) and `openai/gpt-oss-20b` (short tasks), `qwen/qwen3.8-27b` for image input. xAI Grok (`XAI_API_KEY`) is also supported; a key pasted under the wrong provider setting is routed automatically. Gemini, Anthropic, OpenAI and OpenAI-compatible remain available.

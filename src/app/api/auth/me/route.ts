@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { currentUser, localAuthConfigured, microsoftConfigured, authRequired, firstName } from "@/lib/server/auth";
+import { currentUser, localAuthConfigured, microsoftConfigured, authRequired, authMisconfigured, firstName } from "@/lib/server/auth";
 import { env } from "@/lib/server/env";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +10,7 @@ export async function GET() {
     user: user ? { ...user, firstName: firstName(user) } : null,
     mode: env.authMode,
     required: authRequired(),
-    methods: { microsoft: microsoftConfigured(), local: localAuthConfigured() || true },
+    methods: { microsoft: microsoftConfigured(), local: localAuthConfigured() || true, register: env.authMode !== "header" && !authMisconfigured() },
     configured: authRequired(),
   });
 }

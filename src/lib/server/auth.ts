@@ -135,8 +135,8 @@ export async function requireAdmin(): Promise<User> {
 }
 
 export class AuthError extends Error {
-  constructor(public status: 401 | 403 | 503) {
-    super(status === 401 ? "Sign in required" : status === 403 ? "Admin access required" : "Sign-in is not configured on this server");
+  constructor(public status: 401 | 403 | 503, message?: string) {
+    super(message ?? (status === 401 ? "Sign in required" : status === 403 ? "Admin access required" : "Sign-in is not configured on this server"));
   }
 }
 
@@ -185,7 +185,31 @@ export async function authenticateLocal(username: string, password: string): Pro
     scryptSync(password, "x", 64); // burn similar time to a real check
     return null;
   }
-  return verifyPassword(password, acct) ? { id: acct.username, name: acct.name, email: acct.email, role: acct.role, via: "local" } : null;
+  if (!verifyPassword(password, acct)) return null;
+  if (acct.status === "pending") throw new AuthError(403, "Your account request is waiting for an administrator to approve it.");
+  return { id: acct.username, name: acct.name, email: acct.email, role: acct.role, via: "local" };
+}
+
+/** Self-service account request from the login page: stored as pending until an administrator approves it. */
+export async function requestAccount(input: { name: string; email: string; password: string }): Promise<Account> {
+  const email = input.email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 160) throw new Error("Enter a valid email address");
+  if (input.password.length < 8) throw new Error("Password must be at least 8 characters");
+  if (envUsers().some((u) => u.username.toLowerCase() === email || u.email?.toLowerCase() === email)) throw new Error("That email already has an account. Sign in instead.");
+  const existing = (await store().getAccount(email)) ?? (await store().listAccounts()).find((a) => a.email.toLowerCase() === email);
+  if (existing) throw new Error(existing.status === "pending" ? "A request for this email is already waiting for approval." : "That email already has an account. Sign in instead.");
+  const a: Account = { username: email, name: input.name.trim().slice(0, 120) || email.split("@")[0], email, role: "user", passwordHash: hashPassword(input.password), createdAt: Date.now(), status: "pending" };
+  await store().saveAccount(a);
+  return a;
+}
+
+/** Approve a pending request (admin). */
+export async function approveAccount(username: string, adminId: string): Promise<Account> {
+  const a = await store().getAccount(username.trim().toLowerCase());
+  if (!a) throw new Error("No such account");
+  const approved: Account = { ...a, status: "active", approvedBy: adminId, approvedAt: Date.now() };
+  await store().saveAccount(approved);
+  return approved;
 }
 
 export async function createAccount(input: { username: string; name: string; email: string; role: "admin" | "user"; password: string }): Promise<Account> {

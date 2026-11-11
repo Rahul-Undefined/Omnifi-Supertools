@@ -1,19 +1,19 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdmin, createAccount, isSameOrigin, microsoftConfigured } from "@/lib/server/auth";
+import { requireAdmin, createAccount, approveAccount, isSameOrigin, microsoftConfigured } from "@/lib/server/auth";
 import { store } from "@/lib/server/store";
 import { env } from "@/lib/server/env";
 import { handleError, jsonError, readJson } from "@/lib/server/api";
 
 export const dynamic = "force-dynamic";
 
-const safe = (a: { username: string; name: string; email: string; role: string; createdAt: number }) => ({ username: a.username, name: a.name, email: a.email, role: a.role, createdAt: a.createdAt });
+const safe = (a: { username: string; name: string; email: string; role: string; createdAt: number; status?: string; approvedBy?: string; approvedAt?: number }) => ({ username: a.username, name: a.name, email: a.email, role: a.role, createdAt: a.createdAt, status: a.status ?? "active", approvedBy: a.approvedBy, approvedAt: a.approvedAt });
 
 export async function GET() {
   try {
     await requireAdmin();
     const accounts = (await store().listAccounts()).map(safe);
-    return NextResponse.json({ accounts, microsoft: microsoftConfigured(), allowedDomains: env.allowedDomains, adminEmails: env.adminEmails, persistent: Boolean(env.databaseUrl) });
+    return NextResponse.json({ accounts, microsoft: microsoftConfigured(), allowedDomains: env.allowedDomains, adminEmails: env.adminEmails, persistent: Boolean(env.databaseUrl) || Boolean(env.githubDataRepo && env.githubDataToken) });
   } catch (e) {
     return handleError(e);
   }
@@ -34,6 +34,21 @@ export async function POST(req: Request) {
       return jsonError(e instanceof Error ? e.message : "Could not create the account", 400);
     }
     await store().recordAudit({ at: Date.now(), actor: admin.id, action: "admin.user_created", detail: `${account.username} (${account.role})` });
+    return NextResponse.json({ account: safe(account) });
+  } catch (e) {
+    return handleError(e);
+  }
+}
+
+/** Approve a pending self-service request. */
+export async function PATCH(req: Request) {
+  try {
+    if (!isSameOrigin(req)) return jsonError("Cross-origin requests are not allowed", 403);
+    const admin = await requireAdmin();
+    const { username } = z.object({ username: z.string().min(1) }).parse(await readJson(req, 1024));
+    let account;
+    try { account = await approveAccount(username, admin.id); } catch (e) { return jsonError(e instanceof Error ? e.message : "Could not approve", 400); }
+    await store().recordAudit({ at: Date.now(), actor: admin.id, action: "admin.user_approved", detail: account.username });
     return NextResponse.json({ account: safe(account) });
   } catch (e) {
     return handleError(e);

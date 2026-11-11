@@ -57,6 +57,26 @@ function LoginForm() {
     return { message: ERRORS[e] ?? "Sign-in failed. Try again.", hint };
   });
   const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<"signin" | "request">(() => (params.get("request") ? "request" : "signin"));
+  const [req, setReq] = useState({ name: "", email: "", password: "", confirm: "" });
+  const [reqDone, setReqDone] = useState<string | null>(null);
+
+  const submitRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (req.password !== req.confirm) { setError({ message: "The two passwords do not match." }); return; }
+    setBusy(true);
+    try {
+      const res = await fetch("/api/auth/register", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: req.name, email: req.email, password: req.password }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setError({ message: data.error ?? "Could not send the request", hint: data.hint }); return; }
+      setReqDone(req.email.trim().toLowerCase());
+    } catch {
+      setError({ message: "Network error. Try again." });
+    } finally {
+      setBusy(false);
+    }
+  };
 
   useEffect(() => {
     if (user) router.replace(safeNext);
@@ -98,7 +118,29 @@ function LoginForm() {
             <p className="mt-6 rounded-control-sm bg-surface-2 px-4 py-3 text-sm text-body">No sign-in method is configured on this server yet, so everything is open. An administrator can set ADMIN_PASSWORD or Microsoft sign-in.</p>
           )}
 
-          {microsoft && (
+          {mode === "request" && (
+            <div className="mt-6">
+              {reqDone ? (
+                <div className="rounded-control border border-success/40 bg-success-soft px-4 py-3 text-sm text-foreground">
+                  <p className="font-medium">Request sent.</p>
+                  <p className="mt-1 text-body">An administrator will review the request for <span className="font-mono text-xs">{reqDone}</span>. Once approved, sign in here with that email and the password you chose. Rahul Ojha (rahul@myomnifi.com) can confirm the status.</p>
+                  <button type="button" onClick={() => { setMode("signin"); setReqDone(null); }} className="mt-3 text-xs text-accent hover:underline">Back to sign in</button>
+                </div>
+              ) : (
+                <form onSubmit={submitRequest} className="space-y-4">
+                  <p className="text-sm text-body">For people without an Omnifi Microsoft login. An administrator approves each request before the first sign-in.</p>
+                  <div><Label htmlFor="req-name">Full name</Label><Input id="req-name" autoComplete="name" value={req.name} onChange={(e) => setReq({ ...req, name: e.target.value })} required /></div>
+                  <div><Label htmlFor="req-email">Email (this becomes your username)</Label><Input id="req-email" type="email" autoComplete="email" value={req.email} onChange={(e) => setReq({ ...req, email: e.target.value })} required /></div>
+                  <div><Label htmlFor="req-password">Password (at least 8 characters)</Label><Input id="req-password" type="password" autoComplete="new-password" minLength={8} value={req.password} onChange={(e) => setReq({ ...req, password: e.target.value })} required /></div>
+                  <div><Label htmlFor="req-confirm">Confirm password</Label><Input id="req-confirm" type="password" autoComplete="new-password" minLength={8} value={req.confirm} onChange={(e) => setReq({ ...req, confirm: e.target.value })} required /></div>
+                  <Button type="submit" className="w-full" loading={busy}>Send request</Button>
+                  <button type="button" onClick={() => setMode("signin")} className="w-full text-xs text-muted hover:text-accent">Back to sign in</button>
+                </form>
+              )}
+            </div>
+          )}
+
+          {mode === "signin" && microsoft && (
             <div className="mt-6 space-y-3">
               <a href={`/api/auth/microsoft?next=${encodeURIComponent(safeNext)}&remember=${remember ? 1 : 0}`} className="flex h-12 w-full items-center justify-center gap-3 rounded-control border border-border-strong bg-surface text-sm font-medium text-foreground transition-colors hover:border-accent hover:bg-surface-2">
                 <svg width="18" height="18" viewBox="0 0 23 23" aria-hidden><rect x="1" y="1" width="10" height="10" fill="#F25022" /><rect x="12" y="1" width="10" height="10" fill="#7FBA00" /><rect x="1" y="12" width="10" height="10" fill="#00A4EF" /><rect x="12" y="12" width="10" height="10" fill="#FFB900" /></svg>
@@ -117,7 +159,7 @@ function LoginForm() {
             </div>
           )}
 
-          {localFirst && (
+          {mode === "signin" && localFirst && (
             <form onSubmit={submit} className="mt-6 space-y-4">
               <div>
                 <Label htmlFor="username">Username or email</Label>
@@ -138,6 +180,9 @@ function LoginForm() {
 
           {error && (
             <p className="mt-4 rounded-control-sm bg-error-soft px-3.5 py-2.5 text-sm text-foreground">{error.message}{error.hint && <span className="block text-xs text-body">{error.hint}</span>}</p>
+          )}
+          {mode === "signin" && meta?.methods.register && (
+            <p className="mt-4 text-center text-sm text-body">No Omnifi Microsoft login? <button type="button" onClick={() => { setMode("request"); setError(null); }} className="font-medium text-accent hover:underline">Request an account</button></p>
           )}
           <p className="mt-6 text-xs text-muted">Your files are processed in your browser and never stored. Signing in only identifies you to the team and the admin.</p>
         </div>

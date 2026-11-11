@@ -12,7 +12,7 @@ export interface SessionUser {
 
 export interface SessionMeta {
   required: boolean;
-  methods: { microsoft: boolean; local: boolean };
+  methods: { microsoft: boolean; local: boolean; register?: boolean };
 }
 
 interface SessionState {

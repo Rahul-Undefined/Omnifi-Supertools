@@ -46,6 +46,10 @@ export interface Account {
   role: "admin" | "user";
   passwordHash: string; // scrypt$salt$hash
   createdAt: number;
+  /** "pending" = self-service request waiting for an administrator; undefined/"active" = may sign in. */
+  status?: "pending" | "active";
+  approvedBy?: string;
+  approvedAt?: number;
 }
 
 /** Per-person preferences synced across browsers: favorites and recently used tools. */
@@ -266,6 +270,9 @@ class PgBackend implements Backend {
           CREATE TABLE IF NOT EXISTS feedback (id BIGSERIAL PRIMARY KEY, at TIMESTAMPTZ NOT NULL, from_id TEXT NOT NULL, kind TEXT NOT NULL, tool TEXT NOT NULL DEFAULT '', message TEXT NOT NULL);
           CREATE TABLE IF NOT EXISTS users_seen (user_id TEXT PRIMARY KEY, last_seen TIMESTAMPTZ NOT NULL);
           CREATE TABLE IF NOT EXISTS accounts (username TEXT PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, role TEXT NOT NULL, password_hash TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL);
+          ALTER TABLE accounts ADD COLUMN IF NOT EXISTS status TEXT;
+          ALTER TABLE accounts ADD COLUMN IF NOT EXISTS approved_by TEXT;
+          ALTER TABLE accounts ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
           CREATE TABLE IF NOT EXISTS user_prefs (user_id TEXT PRIMARY KEY, data JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL);
           CREATE TABLE IF NOT EXISTS rate_limits (key TEXT PRIMARY KEY, window_start BIGINT NOT NULL, count INTEGER NOT NULL);
           CREATE TABLE IF NOT EXISTS ai_cache (key TEXT PRIMARY KEY, at TIMESTAMPTZ NOT NULL, value TEXT NOT NULL);
@@ -309,15 +316,15 @@ class PgBackend implements Backend {
   }
   async listAccounts(): Promise<Account[]> {
     const p = await this.init();
-    const r = await p.query("SELECT username, name, email, role, password_hash, extract(epoch from created_at)*1000 AS created_at FROM accounts ORDER BY created_at");
-    return r.rows.map((x) => ({ username: x.username, name: x.name, email: x.email, role: x.role, passwordHash: x.password_hash, createdAt: Number(x.created_at) }));
+    const r = await p.query("SELECT username, name, email, role, password_hash, extract(epoch from created_at)*1000 AS created_at, status, approved_by, extract(epoch from approved_at)*1000 AS approved_at FROM accounts ORDER BY created_at");
+    return r.rows.map((x) => ({ username: x.username, name: x.name, email: x.email, role: x.role, passwordHash: x.password_hash, status: (x.status ?? undefined) as Account["status"], approvedBy: x.approved_by ?? undefined, approvedAt: x.approved_at == null ? undefined : Number(x.approved_at), createdAt: Number(x.created_at) }));
   }
   async getAccount(username: string) {
     return (await this.listAccounts()).find((a) => a.username === username.toLowerCase()) ?? null;
   }
   async saveAccount(a: Account) {
     const p = await this.init();
-    await p.query("INSERT INTO accounts (username, name, email, role, password_hash, created_at) VALUES ($1,$2,$3,$4,$5,to_timestamp($6/1000.0)) ON CONFLICT (username) DO UPDATE SET name=EXCLUDED.name, email=EXCLUDED.email, role=EXCLUDED.role, password_hash=EXCLUDED.password_hash", [a.username, a.name, a.email, a.role, a.passwordHash, a.createdAt]);
+    await p.query("INSERT INTO accounts (username, name, email, role, password_hash, created_at, status, approved_by, approved_at) VALUES ($1,$2,$3,$4,$5,to_timestamp($6/1000.0),$7,$8,CASE WHEN $9::double precision IS NULL THEN NULL ELSE to_timestamp($9/1000.0) END) ON CONFLICT (username) DO UPDATE SET name=EXCLUDED.name, email=EXCLUDED.email, role=EXCLUDED.role, password_hash=EXCLUDED.password_hash, status=EXCLUDED.status, approved_by=EXCLUDED.approved_by, approved_at=EXCLUDED.approved_at", [a.username, a.name, a.email, a.role, a.passwordHash, a.createdAt, a.status ?? null, a.approvedBy ?? null, a.approvedAt ?? null]);
   }
   async deleteAccount(username: string) {
     const p = await this.init();

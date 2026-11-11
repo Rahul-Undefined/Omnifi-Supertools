@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { authenticateLocal, createSession, isSameOrigin, localAuthConfigured } from "@/lib/server/auth";
+import { authenticateLocal, createSession, isSameOrigin, localAuthConfigured, AuthError } from "@/lib/server/auth";
 import { env } from "@/lib/server/env";
 import { store } from "@/lib/server/store";
 import { rateLimit, clientKey } from "@/lib/server/ratelimit";
@@ -18,7 +18,9 @@ export async function POST(req: Request) {
     if (!rl.ok) return NextResponse.json({ error: "Too many sign-in attempts", hint: `Try again in ${rl.retryAfter}s.` }, { status: 429 });
     const parsed = schema.safeParse(await readJson(req, 4096));
     if (!parsed.success) return jsonError("Enter a username and password");
-    const user = await authenticateLocal(parsed.data.username, parsed.data.password);
+    let user;
+    try { user = await authenticateLocal(parsed.data.username, parsed.data.password); }
+    catch (e) { if (e instanceof AuthError && e.status === 403) return jsonError("Account not approved yet", 403, e.message); throw e; }
     await store().recordAudit({ at: Date.now(), actor: parsed.data.username.toLowerCase().slice(0, 120), action: user ? "auth.login" : "auth.login_failed", detail: user ? "local" : undefined, ip: clientKey(req) });
     if (!user) return jsonError("Wrong username or password", 401);
     await createSession(user, parsed.data.remember);
