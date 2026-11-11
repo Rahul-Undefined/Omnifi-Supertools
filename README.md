@@ -4,7 +4,7 @@ One place for the tools you actually need.
 
 An internal Omnifi platform for converting, editing, analysing and automating files: PDFs, images, video and audio, Excel and CSV, Word and PowerPoint, finance and bookkeeping helpers, text and developer utilities, web checks and AI-assisted writing. Almost every tool runs entirely in the browser, so client documents never leave the employee's machine.
 
-Live: https://omnifi-supertools.onrender.com (Microsoft 365 sign-in).
+Live: https://omnifi-supertools.onrender.com. Sign in with Microsoft 365, or request an account with your email (an administrator approves it).
 
 ## What is in the box (November 2026)
 
@@ -20,7 +20,9 @@ Live: https://omnifi-supertools.onrender.com (Microsoft 365 sign-in).
 - **Workflows:** chain tools such as OCR → Extract tables → CSV to Excel, save, run, duplicate, share templates.
 - **Steps Recorder:** a Windows desktop recorder (screen video plus click-by-click HTML/Word report) downloadable from `/downloads`.
 - **Power-user shell:** command palette (`Ctrl+K`), favorites and recents synced to the signed-in account, light/dark/system theme, batch processing with per-file progress, cancel and retry.
-- **Admin:** usage, popular tools, failures, processing time, people and the tools each person used, AI usage per person and per task, live provider budget (tokens used, requests and tokens remaining), audit log, team feedback, system health, and a **tool checker** that runs every tool on freshly generated random input and reports what works.
+- **Sign-in:** Microsoft 365 for Omnifi staff; "Request an account" (name, email, password) for contractors and others, approved by an administrator with one click; named accounts can also be created by an admin.
+- **Admin:** usage, popular tools, failures, processing time, **People & tools** (every person with the tools they used, distinct tools, AI runs), AI usage per person and per task, **live provider budget** (tokens used today, requests and tokens remaining per model), account requests waiting for approval, audit log, team feedback, system health, backup status, and a **tool checker** that runs every tool on freshly generated random input and reports what works.
+- **Data that survives deploys without a database:** the server keeps its usage, favourites, accounts and AI allowances in a private GitHub data repository (restored on boot, snapshot every hour and on shutdown) and publishes a daily Excel export (people summary, people × tools, events, AI usage, feedback, users). PostgreSQL (`DATABASE_URL`) remains an alternative.
 - **Security and privacy:** Microsoft sign-in, fail-closed production auth, CSP and security headers, sanitised and sandboxed previews, DNS-pinned SSRF guard, durable rate limits and quotas, retention purge, no file contents stored or logged. Full write-up on `/trust` and in `docs/SECURITY.md`.
 
 ## Quick start
@@ -41,7 +43,7 @@ npm run build       # production build (standalone output)
 npm start           # run the production build
 npm run typecheck   # tsc
 npm run lint        # eslint
-npm test            # vitest (203 tests)
+npm test            # vitest (206 tests)
 npm run check       # all of the above
 ```
 
@@ -51,11 +53,11 @@ npm run check       # all of the above
 - [Product plan](docs/PRODUCT_PLAN.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Security](docs/SECURITY.md)
-- [Deployment](docs/DEPLOYMENT.md) — Render, environment variables, Postgres, AI providers, tool checker
+- [Deployment](docs/DEPLOYMENT.md) — Render, environment variables, GitHub data backup, Postgres, AI providers, tool checker
 - [Adding a tool](docs/ADDING_A_TOOL.md)
 - [Brand guide](docs/OMNIFI_BRAND_GUIDE.md)
 - [New tool proposals (research, 2026-10-28)](docs/NEW_TOOL_PROPOSALS_2026-10-28.md)
 
 ## Stack
 
-Next.js 16, React 19, TypeScript, Tailwind CSS 4, zustand, cmdk, Fuse.js, pdf-lib (+ encrypt/decrypt forks), pdf.js, tesseract.js, FFmpeg WebAssembly, SheetJS, JSZip, DOMPurify, undici, jose, zod, vitest. Hosted on Render (Docker), optional PostgreSQL (Neon) for durable data.
+Next.js 16, React 19, TypeScript, Tailwind CSS 4, zustand, cmdk, Fuse.js, pdf-lib (+ encrypt/decrypt forks), pdf.js, tesseract.js, FFmpeg WebAssembly, SheetJS, JSZip, DOMPurify, undici, jose, zod, vitest. Hosted on Render (Docker); durable data via a private GitHub data repository or PostgreSQL.
