@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/server/auth";
 import { store } from "@/lib/server/store";
-import { aiStatus, liteModel, activeKey } from "@/lib/server/ai";
+import { aiStatus, liteModel, activeKey, providerLimits } from "@/lib/server/ai";
 import { env } from "@/lib/server/env";
 import { registryStats, getTool } from "@/tools/registry";
 import { handleError } from "@/lib/server/api";
@@ -58,10 +58,43 @@ export async function GET() {
       totals: { all: aiRows.length, today: aiRows.filter((a) => a.at > day).length, week: aiRows.filter((a) => a.at > week).length, cached: aiRows.filter(isCache).length, providerCallsToday: aiRows.filter((a) => a.at > day && !isCache(a)).length },
       byUser: [...byUser.entries()].map(([user, v]) => ({ user, ...v })).sort((a, b) => b.week - a.week).slice(0, 50),
       byTask: [...byTask.entries()].map(([task, n]) => ({ task, n })).sort((a, b) => b.n - a.n),
+      // Tokens actually billed by the provider today / this week, per model (from the "N+M tok" audit details).
+      tokens: (() => {
+        const perModel = new Map<string, { today: number; week: number; callsToday: number }>();
+        let today = 0, week = 0;
+        for (const a of aiRows) {
+          const m = (a.detail ?? "").match(/, ([^,]+), (\d+)\+(\d+) tok$/);
+          if (!m) continue;
+          const tok = Number(m[2]) + Number(m[3]);
+          const row = perModel.get(m[1]) ?? { today: 0, week: 0, callsToday: 0 };
+          if (a.at > day) { today += tok; row.today += tok; row.callsToday++; }
+          if (a.at > week) { week += tok; row.week += tok; }
+          perModel.set(m[1], row);
+        }
+        return { today, week, perModel: [...perModel.entries()].map(([model, v]) => ({ model, ...v })).sort((a, b) => b.today - a.today) };
+      })(),
+      providerLimits: providerLimits(),
       recent: aiRows.slice(-30).reverse().map((a) => ({ at: a.at, user: a.actor, task: a.action.slice(3), detail: a.detail ?? "" })),
     };
+    // Per person: which tools they used, how many distinct tools, and how many of those are AI tools (last 30 days of events).
+    const perPerson = new Map<string, { runs: number; today: number; week: number; aiRuns: number; last: number; tools: Map<string, number> }>();
+    for (const u of usage) {
+      if (!u.user || u.cancelled) continue;
+      const p = perPerson.get(u.user) ?? { runs: 0, today: 0, week: 0, aiRuns: 0, last: 0, tools: new Map() };
+      p.runs++; if (u.at > day) p.today++; if (u.at > week) p.week++;
+      if (getTool(u.tool)?.processor.startsWith("ai.")) p.aiRuns++;
+      p.last = Math.max(p.last, u.at);
+      p.tools.set(u.tool, (p.tools.get(u.tool) ?? 0) + 1);
+      perPerson.set(u.user, p);
+    }
+    const people = [...perPerson.entries()].map(([user, p]) => {
+      const tools = [...p.tools.entries()].map(([id, runs]) => ({ id, name: getTool(id)?.name ?? id, runs, ai: Boolean(getTool(id)?.processor.startsWith("ai.")) })).sort((a, b) => b.runs - a.runs);
+      return { user, runs: p.runs, today: p.today, week: p.week, aiRuns: p.aiRuns, toolsUsed: tools.length, aiToolsUsed: tools.filter((t) => t.ai).length, lastActive: p.last, tools };
+    }).sort((a, b) => b.runs - a.runs);
+
     return NextResponse.json({
       ai,
+      people,
       users: { total: Object.keys(snap.users).length, activeToday: Object.values(snap.users).filter((t) => t > day).length, activeWeek: Object.values(snap.users).filter((t) => t > week).length },
       usage: { total: usage.length, today: usage.filter((u) => u.at > day).length, week: usage.filter((u) => u.at > week).length, failed: usage.filter((u) => !u.ok && !u.cancelled).length, cancelled: usage.filter((u) => u.cancelled).length, avgMs: Math.round(totalMs / Math.max(1, usage.length)), p95Ms: percentile(usage.map((u) => u.ms), 0.95) },
       popular,

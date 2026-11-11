@@ -23,25 +23,24 @@ OmniTools and iLovePDF were reviewed for information architecture only: category
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Branding, shell, header, nav, home, search, categories, registry, theme, responsive | Done |
-| 2 | Merge, split, compress, rotate, extract, delete pages, JPG↔PDF, OCR, metadata (+ text, tables, watermark, page numbers, compare, repair) | Done, browser-side |
-| 3 | Images: compress, resize, convert, crop, rotate, flip, metadata view/strip, watermark, blur, pixelate, QR generate/read, favicon, palette | Done |
-| 4 | Video/audio via FFmpeg WebAssembly: convert, compress, trim, merge, extract audio, audio convert/compress/cut/merge, GIF both ways, thumbnails, frames, metadata | Done (engine loads from CDN or self-hosted) |
-| 5 | Office: CSV↔Excel, dedupe, clean, split/merge columns, merge sheets, extract sheets, compare, date/data formatting; DOCX/PPTX text, images, metadata, compare; Excel/DOCX/PPTX → PDF (browser-side, reflowed) | Done |
-| 6 | Developer: JSON/XML/YAML/SQL/HTML/CSS formatters, regex, URL, Base64, hashes, JWT, UUID, timestamps, cron, colour, API request builder (SSRF-guarded) | Done (JS formatter coming soon) |
-| 7 | Finance: 15 calculators; transaction/bank cleaner, duplicates, debit/credit, categorisation, account mapping, date/amount normalisation, PDF statement → Excel | Done |
-| 8 | AI: 15 tasks over a provider-agnostic server client (Anthropic, OpenAI, OpenAI-compatible) | Done; requires a configured key |
-| 9 | Workflow builder: create, add/remove/reorder/configure steps, save, run, duplicate, favorite, templates | Done |
-| 10 | Admin, security, performance | Done for this build: optional auth + RBAC (open mode when no accounts), CSP/headers, SSRF, rate limits, audit, telemetry, team feedback page, admin dashboard, Docker |
-| 11 | Everyday: multi-zone time converter, world clock, live currency converter | Done |
+| 2 | Documents (30 tools): merge, split, compress, rotate, extract, delete pages, images↔PDF, OCR, text/tables, watermark, metadata, page numbers, compare, repair, protect/unlock (real encryption), redact by search, flatten, form fields, signature, split by statement date, PDF editor, image extractor, EPUB | Done, browser-side |
+| 3 | Images (21): compress, resize, convert, crop, rotate, flip, metadata, watermark, blur, pixelate, QR, favicon, palette, opacity, transparency, grid split, image to text | Done |
+| 4 | Video/audio (14) via self-hosted FFmpeg WebAssembly | Done |
+| 5 | Excel & CSV (26), PowerPoint (19), Word (18): conversions, cleaning, consolidation, formula explainer/audit, OOXML merge/split/replace/clean/compress/audit/compare, mail merge, Markdown/Excel to slides and documents | Done |
+| 6 | Developer (25) and Text (32): formatters, validators, converters, list utilities | Done (JS formatter coming soon) |
+| 7 | Finance (34): 20 calculators, statement splitter, AR aging, bank reconciliation, cleaners, duplicates, classifier, categorisation, mapping, normalisation, PDF statement to Excel, batch OCR of scans | Done |
+| 8 | AI (beta, 26 tools): provider-agnostic server client (Groq default; xAI, Anthropic, Gemini, OpenAI, OpenAI-compatible), lite-model routing, 7-day cache, shared pacing, per-person allowance 15 / 3 h, admin budget view | Done; free tier, paid plan planned |
+| 9 | Workflow builder | Done |
+| 10 | Admin, security, performance: Microsoft sign-in, fail-closed production auth, CSP, sanitised previews, SSRF guard, rate limits, retention purge, audit, telemetry, feedback, admin dashboard with people/tools and AI budget, tool checker, Docker on Render | Done |
+| 11 | Everyday (15), Checks & generators (12), Files (12), Web (11), Steps Recorder download, Tech Hub links, favorites synced per account | Done |
 
 ## Coming soon (declared, not runnable)
 
-PDF → Word/Excel/PowerPoint, Protect PDF, Redact PDF, Website screenshot, HTML → PDF, Public media downloader, Barcode tools, TAR tools, JS formatter. Each needs a server-side engine (LibreOffice, qpdf, headless Chrome, a downloader) that is not part of this build. See DEPLOYMENT.md for the worker design.
+PDF → Word/Excel/PowerPoint, Website screenshot, HTML → PDF, Barcode tools, TAR tools, JS formatter. Each needs a server-side engine (LibreOffice, headless Chrome) that is not part of this build. The public media downloader was built and removed on 2026-10-12 and will not return (terms-of-service and copyright risk).
 
 ## Next candidates
 
-- Worker service with LibreOffice + qpdf to light up the Office conversions and Protect PDF.
-- Redis-backed rate limiting and job queue for multi-instance deployments.
-- Per-user favorites/recents synced through the store (today: per browser).
-- Workflow sharing across the team (export/import JSON is trivial; server storage needs auth for everyone).
-- Interactive crop and redaction canvases.
+- Paid AI plan with a stronger model once the free allowance is hit regularly (admin page shows the live budget).
+- Durable store on every deployment: `DATABASE_URL` (Neon) so history, favorites and allowances survive updates.
+- Tool batches from `docs/NEW_TOOL_PROPOSALS_2026-10-28.md` (subset-sum difference finder, CSV↔OFX/QBO, HEIC to JPG, lookup join, pivot-lite, MACRS, encrypted ZIP, Bates numbering, EML/MSG to PDF, Benford test, email header analyser, paper-tape adding machine).
+- Worker service with LibreOffice to light up the Office conversions.

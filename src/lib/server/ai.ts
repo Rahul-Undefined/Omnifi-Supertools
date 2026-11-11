@@ -101,6 +101,32 @@ export function providerInputCap(): number {
   return provider() === "groq" ? 22_000 : Number.MAX_SAFE_INTEGER;
 }
 
+export interface ProviderLimit {
+  model: string;
+  at: number;
+  /** Requests allowed / remaining in the provider's request window (Groq: per day). */
+  requestsLimit?: number; requestsRemaining?: number; requestsReset?: string;
+  /** Tokens allowed / remaining in the provider's token window (Groq: per minute). */
+  tokensLimit?: number; tokensRemaining?: number; tokensReset?: string;
+}
+const limitsSeen = new Map<string, ProviderLimit>();
+
+/** Remember the rate-limit headers the provider sent with its last response, per model (in memory, admin page only). */
+function noteLimits(res: Response, model: string) {
+  const h = res.headers;
+  const num = (k: string) => { const v = h.get(k); return v == null || v === "" || Number.isNaN(Number(v)) ? undefined : Number(v); };
+  const str = (k: string) => h.get(k) ?? undefined;
+  if (!h.get("x-ratelimit-limit-requests") && !h.get("x-ratelimit-limit-tokens")) return;
+  limitsSeen.set(model, {
+    model, at: Date.now(),
+    requestsLimit: num("x-ratelimit-limit-requests"), requestsRemaining: num("x-ratelimit-remaining-requests"), requestsReset: str("x-ratelimit-reset-requests"),
+    tokensLimit: num("x-ratelimit-limit-tokens"), tokensRemaining: num("x-ratelimit-remaining-tokens"), tokensReset: str("x-ratelimit-reset-tokens"),
+  });
+}
+
+/** Last known provider limits per model since the server started. */
+export function providerLimits(): ProviderLimit[] { return [...limitsSeen.values()].sort((a, b) => b.at - a.at); }
+
 /** Key of the active provider, for the admin fingerprint only (never returned in full). */
 export function activeKey(): string {
   const p = provider();
@@ -181,6 +207,7 @@ async function completeOnce(system: string, user: string, opts: { maxTokens?: nu
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new AiError(`${label} API error (${res.status})`, res.status === 429 ? 429 : 502, typeof data?.error === "string" ? data.error : data?.error?.message);
+    noteLimits(res, model);
     const text = data.choices?.[0]?.message?.content ?? "";
     return { text: opts.json ? extractJson(text) : text, model: data.model ?? model, usage: data.usage ? { input: data.usage.prompt_tokens, output: data.usage.completion_tokens } : undefined };
   } catch (e) {
@@ -280,6 +307,7 @@ async function completeWithImagesOnce(system: string, user: string, images: Imag
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new AiError(`${label} API error (${res.status})`, res.status === 429 ? 429 : 502, typeof data?.error === "string" ? data.error : data?.error?.message);
+    noteLimits(res, model);
     const text = data.choices?.[0]?.message?.content ?? "";
     return { text: opts.json ? extractJson(text) : text, model: data.model ?? model, usage: data.usage ? { input: data.usage.prompt_tokens, output: data.usage.completion_tokens } : undefined };
   } catch (e) {

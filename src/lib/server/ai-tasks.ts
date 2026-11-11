@@ -139,6 +139,19 @@ export const tasks: Record<string, TaskSpec> = {
     maxTokens: 1500,
     maxInputChars: 15_000,
   },
+  promptBuilder: {
+    system: `${BASE} You are an expert prompt engineer. You turn a rough description of what someone wants from an AI assistant into one complete, well-structured prompt they can paste into any assistant (ChatGPT, Claude, Gemini, Copilot). Never answer the request yourself; only write the prompt.`,
+    build: (i, o) => `Write a ready-to-use prompt from the rough request below.
+Target use: ${str(o.target, "general assistant")}. Desired output style of the final answer: ${str(o.style, "clear and professional")}. Length of the prompt: ${str(o.length, "medium")}.
+
+The prompt must include, in this order, as short labelled sections: Role (who the assistant should act as), Context (facts from the request, written out; never invent facts; put anything the user still needs to fill in inside square brackets like [client name]), Task (precise instructions, step by step if useful), Constraints (tone, audience, length, what to avoid, US accounting conventions when relevant), Output format (exact structure of the answer), and if helpful one short Example. Finish with a line "Before answering, ask me if anything above is unclear." Return only the prompt, no preamble or commentary.
+
+Rough request:
+${wrap(i)}`,
+    tier: "lite",
+    maxTokens: 900,
+    maxInputChars: 6_000,
+  },
   regexAssistant: {
     system: `${BASE} You write JavaScript-compatible regular expressions.`,
     build: (i) => `Requirement: ${i}\n\nReturn: the regex on the first line (no delimiters), then 3 example matches, 2 non-matches, and a one-line explanation.`,

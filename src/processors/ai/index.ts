@@ -49,6 +49,7 @@ export const codeExplain = textTask("codeExplain");
 export const excelFormula = textTask("excelFormula");
 export const aiDetect = textTask("aiDetect");
 export const emailReply = textTask("emailReply");
+export const promptBuilder = textTask("promptBuilder");
 export const subjectLines = textTask("subjectLines");
 export const explainJargon = textTask("explainJargon");
 export const reformat = textTask("reformat");

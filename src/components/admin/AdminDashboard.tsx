@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { Fragment, useEffect, useState } from "react";
+import { RefreshCw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Card";
 import { formatBytes } from "@/lib/utils";
@@ -11,11 +11,16 @@ interface AiStats {
   totals: { all: number; today: number; week: number; cached: number; providerCallsToday: number };
   byUser: { user: string; total: number; today: number; week: number; cached: number }[];
   byTask: { task: string; n: number }[];
+  tokens?: { today: number; week: number; perModel: { model: string; today: number; week: number; callsToday: number }[] };
+  providerLimits?: { model: string; at: number; requestsLimit?: number; requestsRemaining?: number; requestsReset?: string; tokensLimit?: number; tokensRemaining?: number; tokensReset?: string }[];
   recent: { at: number; user: string; task: string; detail: string }[];
 }
 
+interface Person { user: string; runs: number; today: number; week: number; aiRuns: number; toolsUsed: number; aiToolsUsed: number; lastActive: number; tools: { id: string; name: string; runs: number; ai: boolean }[] }
+
 interface Stats {
   ai?: AiStats;
+  people?: Person[];
   users: { total: number; activeToday: number; activeWeek: number };
   usage: { total: number; today: number; week: number; failed: number; cancelled: number; avgMs: number; p95Ms: number };
   popular: { id: string; name: string; runs: number; failed: number; avgMs: number }[];
@@ -82,6 +87,14 @@ export function AdminDashboard() {
         </div>
       </section>
 
+      <section>
+        <H2>People &amp; tools</H2>
+        {s.system.storage !== "postgres" && (
+          <p className="mb-4 rounded-control border border-warning/40 bg-warning-soft px-4 py-3 text-sm text-foreground">Usage data is stored in a file on the server, which is wiped on every deploy. Set DATABASE_URL (a free Neon Postgres works) to keep history, favourites and AI allowances across updates. See docs/DEPLOYMENT.md.</p>
+        )}
+        <PeopleTable people={s.people ?? []} />
+      </section>
+
       <div className="grid gap-8 lg:grid-cols-2">
         <section>
           <H2>Most popular tools</H2>
@@ -107,6 +120,26 @@ export function AdminDashboard() {
             <Kpi label="All time (cache hits)" value={`${s.ai.totals.all} (${s.ai.totals.cached})`} small />
           </div>
           <p className="mt-2 text-xs text-muted">Shared pacing {s.ai.limits.globalPerMin}/min · answer cache {s.ai.limits.cacheDays} days · max input {s.ai.limits.maxInputChars.toLocaleString()} chars. Counts come from the audit log (retention applies).</p>
+          {s.ai.tokens && (
+            <div className="mt-4">
+              <h3 className="mb-2 text-sm font-semibold text-foreground">Provider budget (live)</h3>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <Kpi label="Tokens used today" value={s.ai.tokens.today} />
+                <Kpi label="Tokens this week" value={s.ai.tokens.week} />
+                {s.ai.providerLimits?.slice(0, 2).map((l) => (
+                  <Kpi key={l.model} small label={`${l.model}: left`} value={`${l.requestsRemaining?.toLocaleString() ?? "?"} / ${l.requestsLimit?.toLocaleString() ?? "?"} requests · ${l.tokensRemaining?.toLocaleString() ?? "?"} / ${l.tokensLimit?.toLocaleString() ?? "?"} tokens/min`} tone={l.requestsRemaining != null && l.requestsLimit != null && l.requestsRemaining < l.requestsLimit * 0.15 ? "warning" : "success"} />
+                ))}
+              </div>
+              {s.ai.providerLimits?.length ? (
+                <Table head={["Model", "Requests left (window)", "Resets in", "Tokens left (per minute)", "Resets in", "Tokens today", "Calls today", "Seen"]} rows={s.ai.providerLimits.map((l) => { const t = s.ai!.tokens!.perModel.find((m) => m.model === l.model); return [l.model, `${l.requestsRemaining?.toLocaleString() ?? "?"} of ${l.requestsLimit?.toLocaleString() ?? "?"}`, l.requestsReset ?? "–", `${l.tokensRemaining?.toLocaleString() ?? "?"} of ${l.tokensLimit?.toLocaleString() ?? "?"}`, l.tokensReset ?? "–", t?.today ?? 0, t?.callsToday ?? 0, new Date(l.at).toLocaleTimeString()]; })} empty="" />
+              ) : (
+                <p className="mt-2 text-xs text-muted">Provider limits appear here after the first AI call since the server started (read from the provider&apos;s rate-limit headers). Groq: requests are per day, tokens are per minute, per model.</p>
+              )}
+              {s.ai.tokens.perModel.length > 0 && !s.ai.providerLimits?.length && (
+                <Table head={["Model", "Tokens today", "Tokens this week", "Calls today"]} rows={s.ai.tokens.perModel.map((m) => [m.model, m.today, m.week, m.callsToday])} empty="" />
+              )}
+            </div>
+          )}
           <div className="mt-4 grid gap-6 lg:grid-cols-2">
             <div>
               <h3 className="mb-2 text-sm font-semibold text-foreground">By person</h3>
@@ -161,6 +194,48 @@ export function AdminDashboard() {
 
 function H2({ children }: { children: React.ReactNode }) {
   return <h2 className="mb-4 text-lg font-semibold text-foreground">{children}<span className="brand-dot">.</span></h2>;
+}
+
+function PeopleTable({ people }: { people: Person[] }) {
+  const [open, setOpen] = useState<string | null>(null);
+  if (!people.length) return <p className="rounded-control border border-dashed border-border-strong px-4 py-6 text-center text-sm text-muted">No signed-in usage recorded yet (last 30 days).</p>;
+  return (
+    <div className="overflow-auto rounded-control border border-border">
+      <table className="w-full text-sm">
+        <thead className="bg-navy-800 text-white"><tr>{["Person", "Runs (30 d)", "This week", "Today", "Tools used", "AI runs", "AI tools", "Last active", "Most used"].map((h) => <th key={h} className="px-3 py-2 text-left font-semibold whitespace-nowrap">{h}</th>)}</tr></thead>
+        <tbody>
+          {people.map((p) => (
+            <Fragment key={p.user}>
+              <tr className="odd:bg-surface even:bg-surface-2 cursor-pointer hover:bg-accent-soft/40" onClick={() => setOpen(open === p.user ? null : p.user)} title="Click to see every tool this person used">
+                <td className="px-3 py-2 text-foreground font-medium whitespace-nowrap">{open === p.user ? "▾" : "▸"} {p.user}</td>
+                <td className="px-3 py-2 text-right font-mono tabular-nums">{p.runs.toLocaleString()}</td>
+                <td className="px-3 py-2 text-right font-mono tabular-nums">{p.week.toLocaleString()}</td>
+                <td className="px-3 py-2 text-right font-mono tabular-nums">{p.today.toLocaleString()}</td>
+                <td className="px-3 py-2 text-right font-mono tabular-nums">{p.toolsUsed}</td>
+                <td className="px-3 py-2 text-right font-mono tabular-nums">{p.aiRuns.toLocaleString()}</td>
+                <td className="px-3 py-2 text-right font-mono tabular-nums">{p.aiToolsUsed}</td>
+                <td className="px-3 py-2 text-body whitespace-nowrap">{new Date(p.lastActive).toLocaleString()}</td>
+                <td className="px-3 py-2 text-body">{p.tools.slice(0, 3).map((t) => t.name).join(", ")}{p.tools.length > 3 ? ` +${p.tools.length - 3}` : ""}</td>
+              </tr>
+              {open === p.user && (
+                <tr className="bg-surface-2">
+                  <td colSpan={9} className="px-3 py-3">
+                    <div className="flex flex-wrap gap-2">
+                      {p.tools.map((t) => (
+                        <span key={t.id} className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${t.ai ? "border-accent/40 bg-accent-soft text-accent" : "border-border bg-surface text-body"}`}>
+                          {t.ai && <Sparkles className="h-3 w-3" />}{t.name}<span className="font-mono tabular-nums text-muted">×{t.runs}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </Fragment>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 function Kpi({ label, value, small, tone }: { label: string; value: number | string; small?: boolean; tone?: "error" | "success" | "warning" }) {

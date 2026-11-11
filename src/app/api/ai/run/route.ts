@@ -74,7 +74,7 @@ export async function POST(req: Request) {
       throw e;
     }
     if (cacheMs > 0) await store().cacheSet(cacheKey, JSON.stringify(result));
-    await store().recordAudit({ at: Date.now(), actor: user.id, action: `ai.${task}`, detail: `${input.length} chars, ${Date.now() - started} ms, ${result.model}` });
+    await store().recordAudit({ at: Date.now(), actor: user.id, action: `ai.${task}`, detail: `${input.length} chars, ${Date.now() - started} ms, ${result.model}${result.usage ? `, ${result.usage.input}+${result.usage.output} tok` : ""}` });
     return NextResponse.json(present(result, mine, false));
   } catch (e) {
     return handleError(e);

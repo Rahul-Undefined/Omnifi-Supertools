@@ -63,7 +63,7 @@ See `.env.example`. The important ones:
 | `ADMIN_PASSWORD`, `USERS_JSON` | Local accounts |
 | `AUTH_ADMINS` | Emails granted admin in header mode |
 | `AI_PROVIDER` (groq / grok / anthropic / gemini / openai / openai-compatible), `AI_MODEL`, `GROQ_API_KEY`, `GROQ_VISION_MODEL`, `XAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `OPENAI_BASE_URL` | AI tools |
-| `DATABASE_URL` | PostgreSQL connection string |
+| `DATABASE_URL` | PostgreSQL connection string. Without it the server keeps usage, favourites, named accounts and AI allowances in a JSON file that is wiped on every deploy; with it they survive updates. A free Neon project is enough: create a project at neon.tech, copy the pooled connection string (postgresql://...@...neon.tech/neondb?sslmode=require) into Render, redeploy. Tables are created automatically. |
 | `NEXT_PUBLIC_FFMPEG_CORE_URL` | Self-hosted FFmpeg core (build-time) |
 
 ## Sharing with the team (quick options)
