@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { complete, modelFor } from "@/lib/server/ai";
+import { complete, modelFor, providerInputCap } from "@/lib/server/ai";
 import { createHash } from "node:crypto";
 import { tasks } from "@/lib/server/ai-tasks";
 import { env } from "@/lib/server/env";
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       truncated = true;
     }
     const spec = tasks[task];
-    const cap = Math.min(env.aiMaxInputChars, spec.maxInputChars ?? env.aiMaxInputChars);
+    const cap = Math.min(env.aiMaxInputChars, spec.maxInputChars ?? env.aiMaxInputChars, providerInputCap());
     if (input.length > cap) { input = input.slice(0, cap); truncated = true; }
     const started = Date.now();
     const prompt = spec.build(input, options);

@@ -30,7 +30,7 @@ services:
       - key: AI_MODEL_LITE
         value: openai/gpt-oss-20b
       - key: AI_GLOBAL_PER_MIN
-        value: "8"
+        value: "6"
       - key: AI_GLOBAL_PER_DAY
         value: "200"
       - key: AI_CACHE_DAYS

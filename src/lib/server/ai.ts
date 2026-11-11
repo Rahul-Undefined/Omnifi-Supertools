@@ -92,6 +92,15 @@ function compat(): { base: string; key: string; label: string } {
   return { base: env.openaiBaseUrl.replace(/\/$/, ""), key: env.openaiKey, label: "AI provider" };
 }
 
+/**
+ * Largest input (characters) a single request may carry on the active provider. Groq's free/developer tier allows
+ * 8,000 tokens per minute per model, so one request must stay well under that (~4 chars per token); longer inputs
+ * are truncated with a note rather than failing with 429/413.
+ */
+export function providerInputCap(): number {
+  return provider() === "groq" ? 22_000 : Number.MAX_SAFE_INTEGER;
+}
+
 /** Key of the active provider, for the admin fingerprint only (never returned in full). */
 export function activeKey(): string {
   const p = provider();
