@@ -8,7 +8,8 @@ import { env } from "./env";
  *   openai-compatible   -> any OpenAI-compatible endpoint (OPENAI_BASE_URL + OPENAI_API_KEY),
  *                          e.g. Azure OpenAI gateway, Ollama, vLLM on the intranet.
  *   gemini              -> Google Gemini API, generateContent (GEMINI_API_KEY)
- *   grok                -> xAI Grok, OpenAI-compatible chat completions at https://api.x.ai/v1 (XAI_API_KEY)
+ *   grok                -> xAI Grok, OpenAI-compatible chat completions at https://api.x.ai/v1 (XAI_API_KEY, "xai-...")
+ *   groq                -> Groq (groq.com), OpenAI-compatible chat completions at https://api.groq.com/openai/v1 (GROQ_API_KEY, "gsk_...")
  * Keys never leave this module.
  */
 export interface AiResult {
@@ -17,36 +18,64 @@ export interface AiResult {
   usage?: { input: number; output: number };
 }
 
-export function aiStatus(): { configured: boolean; provider?: string; model?: string; hint?: string } {
+export type Provider = "" | "anthropic" | "openai" | "openai-compatible" | "gemini" | "grok" | "groq";
+
+/**
+ * Active provider. Groq (groq.com, keys "gsk_...") and xAI Grok (x.ai, keys "xai-...") are different companies with
+ * different endpoints; a Groq key pasted under the xAI setting is routed to Groq instead of failing with 400.
+ */
+export function provider(): Provider {
   const p = env.aiProvider;
-  if (!p) return { configured: false, hint: "Set AI_PROVIDER to grok, anthropic, gemini, openai or openai-compatible, plus the matching API key." };
-  if (p === "grok" && !env.xaiKey) return { configured: false, provider: p, hint: "XAI_API_KEY is missing." };
+  if (p === "grok" && !env.xaiKey && env.groqKey) return "groq";
+  if (p === "grok" && env.xaiKey.startsWith("gsk_")) return "groq";
+  if (p === "groq" && !env.groqKey && env.xaiKey.startsWith("xai-")) return "grok";
+  return p;
+}
+
+function groqKey(): string { return env.groqKey || (env.xaiKey.startsWith("gsk_") ? env.xaiKey : ""); }
+function xaiKey(): string { return env.xaiKey && !env.xaiKey.startsWith("gsk_") ? env.xaiKey : ""; }
+
+export function aiStatus(): { configured: boolean; provider?: string; model?: string; hint?: string } {
+  const p = provider();
+  if (!p) return { configured: false, hint: "Set AI_PROVIDER to groq, grok, anthropic, gemini, openai or openai-compatible, plus the matching API key." };
+  if (p === "groq" && !groqKey()) return { configured: false, provider: p, hint: "GROQ_API_KEY is missing (keys from console.groq.com start with gsk_)." };
+  if (p === "grok" && !xaiKey()) return { configured: false, provider: p, hint: "XAI_API_KEY is missing (keys from console.x.ai start with xai-)." };
   if (p === "gemini" && !env.geminiKey) return { configured: false, provider: p, hint: "GEMINI_API_KEY is missing." };
   if (p === "anthropic" && !env.anthropicKey) return { configured: false, provider: p, hint: "ANTHROPIC_API_KEY is missing." };
-  if ((p === "openai" || p === "openai-compatible") && !env.openaiKey && p === "openai") return { configured: false, provider: p, hint: "OPENAI_API_KEY is missing." };
+  if (p === "openai" && !env.openaiKey) return { configured: false, provider: p, hint: "OPENAI_API_KEY is missing." };
   return { configured: true, provider: p, model: defaultModel() };
 }
 
 /** AI_MODEL is honoured only when it belongs to the active provider's family, so a stale value cannot break every call. */
 function matchesProvider(model: string): boolean {
-  if (env.aiProvider === "gemini") return /^gemini/i.test(model);
-  if (env.aiProvider === "grok") return /^grok/i.test(model);
-  if (env.aiProvider === "anthropic") return /^claude/i.test(model);
+  const p = provider();
+  if (p === "gemini") return /^gemini/i.test(model);
+  if (p === "grok") return /^grok/i.test(model);
+  if (p === "anthropic") return /^claude/i.test(model);
+  if (p === "groq") return !/^(gemini|grok|claude|gpt-4|gpt-5|o[134])/i.test(model);
   return true;
 }
 
+/** Defaults when AI_MODEL / AI_MODEL_LITE are not set (override in Render). */
+const GROK_DEFAULT = "grok-4.3"; // xAI's cheapest current text model
+const GROQ_DEFAULT = "openai/gpt-oss-120b"; // Groq production model, strong general quality
+const GROQ_LITE = "openai/gpt-oss-20b"; // Groq production model, ~1000 tokens/s
+
 function defaultModel(): string {
   if (env.aiModel && matchesProvider(env.aiModel)) return env.aiModel;
-  return env.aiProvider === "anthropic" ? "claude-sonnet-5" : env.aiProvider === "gemini" ? "gemini-3.8-flash" : env.aiProvider === "grok" ? GROK_DEFAULT : "gpt-4o-mini";
+  const p = provider();
+  return p === "anthropic" ? "claude-sonnet-5" : p === "gemini" ? "gemini-3.8-flash" : p === "grok" ? GROK_DEFAULT : p === "groq" ? GROQ_DEFAULT : "gpt-4o-mini";
 }
 
 /** Cheaper model for short tasks; falls back to the main model when none is configured. */
 export function liteModel(): string {
   if (env.aiModelLite && matchesProvider(env.aiModelLite)) return env.aiModelLite;
-  if (env.aiProvider === "gemini") return "gemini-3.5-flash-lite";
-  if (env.aiProvider === "grok") return GROK_DEFAULT;
-  if (env.aiProvider === "anthropic") return "claude-haiku-5-5";
-  if (env.aiProvider === "openai") return "gpt-4o-mini";
+  const p = provider();
+  if (p === "gemini") return "gemini-3.5-flash-lite";
+  if (p === "grok") return GROK_DEFAULT;
+  if (p === "groq") return GROQ_LITE;
+  if (p === "anthropic") return "claude-haiku-5-5";
+  if (p === "openai") return "gpt-4o-mini";
   return defaultModel();
 }
 
@@ -54,14 +83,19 @@ export function modelFor(tier: "lite" | "standard" | undefined): string {
   return tier === "lite" ? liteModel() : defaultModel();
 }
 
-/** xAI model used when AI_MODEL / AI_MODEL_LITE are not set (cheapest current text model; override in Render). */
-const GROK_DEFAULT = "grok-4.3";
-
-/** Base URL, key and label for the OpenAI-compatible providers (openai, openai-compatible, grok). */
+/** Base URL, key and label for the OpenAI-compatible providers (openai, openai-compatible, grok, groq). */
 function compat(): { base: string; key: string; label: string } {
-  if (env.aiProvider === "grok") return { base: "https://api.x.ai/v1", key: env.xaiKey, label: "xAI" };
-  if (env.aiProvider === "openai") return { base: "https://api.openai.com/v1", key: env.openaiKey, label: "OpenAI" };
+  const p = provider();
+  if (p === "groq") return { base: "https://api.groq.com/openai/v1", key: groqKey(), label: "Groq" };
+  if (p === "grok") return { base: "https://api.x.ai/v1", key: xaiKey(), label: "xAI" };
+  if (p === "openai") return { base: "https://api.openai.com/v1", key: env.openaiKey, label: "OpenAI" };
   return { base: env.openaiBaseUrl.replace(/\/$/, ""), key: env.openaiKey, label: "AI provider" };
+}
+
+/** Key of the active provider, for the admin fingerprint only (never returned in full). */
+export function activeKey(): string {
+  const p = provider();
+  return p === "groq" ? groqKey() : p === "grok" ? xaiKey() : p === "gemini" ? env.geminiKey : p === "anthropic" ? env.anthropicKey : env.openaiKey;
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -98,7 +132,7 @@ async function completeOnce(system: string, user: string, opts: { maxTokens?: nu
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 120_000);
   try {
-    if (env.aiProvider === "anthropic") {
+    if (provider() === "anthropic") {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "content-type": "application/json", "x-api-key": env.anthropicKey, "anthropic-version": "2023-06-01" },
@@ -110,7 +144,7 @@ async function completeOnce(system: string, user: string, opts: { maxTokens?: nu
       const text = (data.content ?? []).filter((c: { type: string }) => c.type === "text").map((c: { text: string }) => c.text).join("");
       return { text: opts.json ? extractJson(text) : text, model: data.model ?? model, usage: data.usage ? { input: data.usage.input_tokens, output: data.usage.output_tokens } : undefined };
     }
-    if (env.aiProvider === "gemini") {
+    if (provider() === "gemini") {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
         method: "POST",
         headers: { "content-type": "application/json", "x-goog-api-key": env.geminiKey },
@@ -180,13 +214,13 @@ export async function completeWithImages(system: string, user: string, images: I
 async function completeWithImagesOnce(system: string, user: string, images: ImageInput[], opts: MultimodalOptions): Promise<AiResult> {
   const status = aiStatus();
   if (!status.configured) throw new AiError("AI provider is not configured", 503, status.hint);
-  const model = opts.model && matchesProvider(opts.model) ? opts.model : defaultModel();
+  const model = opts.model && matchesProvider(opts.model) ? opts.model : provider() === "groq" && images.length ? env.groqVisionModel : defaultModel();
   const maxTokens = opts.maxTokens ?? 4096;
   const controller = new AbortController();
   // Multimodal SOP requests with dozens of screenshots take a while on the free tier; allow up to 4 minutes.
   const timer = setTimeout(() => controller.abort(), 240_000);
   try {
-    if (env.aiProvider === "gemini") {
+    if (provider() === "gemini") {
       const parts: Array<Record<string, unknown>> = [{ text: user }];
       for (const img of images) { parts.push({ text: img.label }); parts.push({ inline_data: { mime_type: img.mimeType, data: img.base64 } }); }
       const call = async (thinking: Record<string, unknown> | null) => {
@@ -211,7 +245,7 @@ async function completeWithImagesOnce(system: string, user: string, images: Imag
       if (!text) throw new AiError("Gemini returned no text", 502, cand?.finishReason ? `finishReason: ${cand.finishReason}` : undefined);
       return { text: opts.json ? extractJson(text) : text, model: data.modelVersion ?? model, usage: data.usageMetadata ? { input: data.usageMetadata.promptTokenCount ?? 0, output: data.usageMetadata.candidatesTokenCount ?? 0 } : undefined };
     }
-    if (env.aiProvider === "anthropic") {
+    if (provider() === "anthropic") {
       const content: Array<Record<string, unknown>> = [{ type: "text", text: user }];
       for (const img of images) { content.push({ type: "text", text: img.label }); content.push({ type: "image", source: { type: "base64", media_type: img.mimeType, data: img.base64 } }); }
       const res = await fetch("https://api.anthropic.com/v1/messages", {

@@ -16,16 +16,19 @@ services:
         value: "3000"
       - key: SESSION_SECRET
         generateValue: true
-      # AI provider: grok | anthropic | gemini | openai | openai-compatible. Keys are pasted in the Render dashboard, never committed.
+      # AI provider: groq | grok | anthropic | gemini | openai | openai-compatible. Keys are pasted in the Render dashboard, never committed.
+      # groq = groq.com (keys gsk_...), grok = x.ai (keys xai-...): different companies.
       - key: AI_PROVIDER
-        value: grok
+        value: groq
       - key: AI_MODEL
-        value: grok-4.3
-      - key: XAI_API_KEY
+        value: openai/gpt-oss-120b
+      - key: GROQ_API_KEY
         sync: false
+      - key: GROQ_VISION_MODEL
+        value: qwen/qwen3.8-27b
       # Keep the whole team inside the provider's free allowance: lite model for short tasks, shared pacing, 7-day answer cache.
       - key: AI_MODEL_LITE
-        value: grok-4.3
+        value: openai/gpt-oss-20b
       - key: AI_GLOBAL_PER_MIN
         value: "8"
       - key: AI_GLOBAL_PER_DAY
@@ -49,7 +52,7 @@ services:
         value: "5"
       - key: STEPS_RECORDER_MAX_IMAGES
         value: "24"
-      # Optional: a faster model just for SOP writing (e.g. grok-4.3). Empty = AI_MODEL.
+      # Optional: a faster model just for SOP writing (e.g. openai/gpt-oss-20b). Empty = AI_MODEL.
       - key: STEPS_RECORDER_MODEL
         sync: false
       # REQUIRED in production: at least one sign-in method must exist (ADMIN_PASSWORD, USERS_JSON, Microsoft,

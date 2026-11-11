@@ -165,7 +165,7 @@ describe("Grok provider", () => {
     delete process.env.XAI_API_KEY;
     try {
       const { aiStatus } = await import("@/lib/server/ai");
-      expect(aiStatus()).toMatchObject({ configured: false, provider: "grok", hint: "XAI_API_KEY is missing." });
+      expect(aiStatus()).toMatchObject({ configured: false, provider: "grok", hint: "XAI_API_KEY is missing (keys from console.x.ai start with xai-)." });
     } finally { delete process.env.AI_PROVIDER; }
     vi.resetModules();
     process.env.AI_PROVIDER = "grok"; process.env.XAI_API_KEY = "test-key-not-real";
@@ -175,6 +175,49 @@ describe("Grok provider", () => {
       const { complete } = await import("@/lib/server/ai");
       await expect(complete("s", "u")).rejects.toMatchObject({ message: "xAI API error (400)", hint: "Bad data: Messages cannot be empty" });
     } finally { globalThis.fetch = realFetch; delete process.env.AI_PROVIDER; delete process.env.XAI_API_KEY; }
+  });
+});
+
+describe("Groq provider", () => {
+  it("calls api.groq.com with the gsk_ key, gpt-oss defaults and the vision model for images", async () => {
+    vi.resetModules();
+    process.env.AI_PROVIDER = "groq";
+    process.env.GROQ_API_KEY = "gsk_test_not_real";
+    const calls: { url: string; init: RequestInit }[] = [];
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
+      calls.push({ url: String(url), init: init ?? {} });
+      return new Response(JSON.stringify({ choices: [{ message: { content: "Hello from Groq" } }], usage: { prompt_tokens: 3, completion_tokens: 2 } }), { status: 200 });
+    }) as typeof fetch;
+    try {
+      const { complete, completeWithImages, aiStatus, liteModel } = await import("@/lib/server/ai");
+      expect(aiStatus()).toMatchObject({ configured: true, provider: "groq", model: "openai/gpt-oss-120b" });
+      expect(liteModel()).toBe("openai/gpt-oss-20b");
+      const r = await complete("s", "u", { tier: "lite" });
+      expect(r.text).toBe("Hello from Groq");
+      expect(calls[0].url).toBe("https://api.groq.com/openai/v1/chat/completions");
+      expect((calls[0].init.headers as Record<string, string>).authorization).toBe("Bearer gsk_test_not_real");
+      expect(JSON.parse(String(calls[0].init.body)).model).toBe("openai/gpt-oss-20b");
+      await completeWithImages("s", "u", [{ label: "Step 1", mimeType: "image/png", base64: "AAAA" }]);
+      const body = JSON.parse(String(calls[1].init.body));
+      expect(body.model).toBe("qwen/qwen3.8-27b");
+      expect(body.messages[1].content[2].image_url.url).toBe("data:image/png;base64,AAAA");
+    } finally {
+      globalThis.fetch = realFetch;
+      delete process.env.AI_PROVIDER; delete process.env.GROQ_API_KEY;
+    }
+  });
+
+  it("routes a Groq key pasted under the xAI setting to Groq", async () => {
+    vi.resetModules();
+    process.env.AI_PROVIDER = "grok";
+    process.env.XAI_API_KEY = "gsk_pasted_in_wrong_slot";
+    process.env.AI_MODEL = "grok-4.3";
+    try {
+      const { aiStatus, provider } = await import("@/lib/server/ai");
+      expect(provider()).toBe("groq");
+      expect(aiStatus()).toMatchObject({ configured: true, provider: "groq", model: "openai/gpt-oss-120b" });
+    } finally { delete process.env.AI_PROVIDER; delete process.env.XAI_API_KEY; delete process.env.AI_MODEL; }
   });
 });
 

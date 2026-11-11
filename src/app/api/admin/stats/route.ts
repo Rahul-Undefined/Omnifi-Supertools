@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/server/auth";
 import { store } from "@/lib/server/store";
-import { aiStatus, liteModel } from "@/lib/server/ai";
+import { aiStatus, liteModel, activeKey } from "@/lib/server/ai";
 import { env } from "@/lib/server/env";
 import { registryStats, getTool } from "@/tools/registry";
 import { handleError } from "@/lib/server/api";
@@ -49,7 +49,7 @@ export async function GET() {
       byUser.set(a.actor, u);
       byTask.set(a.action.slice(3), (byTask.get(a.action.slice(3)) ?? 0) + 1);
     }
-    const key = env.aiProvider === "grok" ? env.xaiKey : env.aiProvider === "gemini" ? env.geminiKey : env.aiProvider === "anthropic" ? env.anthropicKey : env.openaiKey;
+    const key = activeKey();
     const ai = {
       ...aiStatus(),
       liteModel: aiStatus().configured ? liteModel() : undefined,

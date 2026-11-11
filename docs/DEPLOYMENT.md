@@ -62,7 +62,7 @@ See `.env.example`. The important ones:
 | `AUTH_MODE` | `local` (accounts from env) or `header` (SSO proxy headers) |
 | `ADMIN_PASSWORD`, `USERS_JSON` | Local accounts |
 | `AUTH_ADMINS` | Emails granted admin in header mode |
-| `AI_PROVIDER` (grok / anthropic / gemini / openai / openai-compatible), `AI_MODEL`, `XAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `OPENAI_BASE_URL` | AI tools |
+| `AI_PROVIDER` (groq / grok / anthropic / gemini / openai / openai-compatible), `AI_MODEL`, `GROQ_API_KEY`, `GROQ_VISION_MODEL`, `XAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `OPENAI_BASE_URL` | AI tools |
 | `DATABASE_URL` | PostgreSQL connection string |
 | `NEXT_PUBLIC_FFMPEG_CORE_URL` | Self-hosted FFmpeg core (build-time) |
 
