@@ -39,10 +39,12 @@ export const env = {
   /** Public base URL for OAuth redirects (e.g. https://omnifi-supertools.onrender.com). Derived from the request when empty. */
   appUrl: str("APP_URL"),
   /** AI */
-  aiProvider: str("AI_PROVIDER") as "" | "anthropic" | "openai" | "openai-compatible" | "gemini",
+  aiProvider: str("AI_PROVIDER") as "" | "anthropic" | "openai" | "openai-compatible" | "gemini" | "grok",
   aiModel: str("AI_MODEL"),
   anthropicKey: str("ANTHROPIC_API_KEY"),
   geminiKey: str("GEMINI_API_KEY") || str("GOOGLE_API_KEY"),
+  /** xAI Grok (AI_PROVIDER=grok): OpenAI-compatible endpoint at https://api.x.ai/v1 */
+  xaiKey: str("XAI_API_KEY") || str("GROK_API_KEY"),
   openaiKey: str("OPENAI_API_KEY"),
   openaiBaseUrl: str("OPENAI_BASE_URL", "https://api.openai.com/v1"),
   aiMaxInputChars: Number(str("AI_MAX_INPUT_CHARS", "120000")),

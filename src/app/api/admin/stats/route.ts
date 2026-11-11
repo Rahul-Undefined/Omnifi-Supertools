@@ -49,7 +49,7 @@ export async function GET() {
       byUser.set(a.actor, u);
       byTask.set(a.action.slice(3), (byTask.get(a.action.slice(3)) ?? 0) + 1);
     }
-    const key = env.aiProvider === "gemini" ? env.geminiKey : env.aiProvider === "anthropic" ? env.anthropicKey : env.openaiKey;
+    const key = env.aiProvider === "grok" ? env.xaiKey : env.aiProvider === "gemini" ? env.geminiKey : env.aiProvider === "anthropic" ? env.anthropicKey : env.openaiKey;
     const ai = {
       ...aiStatus(),
       liteModel: aiStatus().configured ? liteModel() : undefined,

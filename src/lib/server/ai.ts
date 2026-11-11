@@ -8,6 +8,7 @@ import { env } from "./env";
  *   openai-compatible   -> any OpenAI-compatible endpoint (OPENAI_BASE_URL + OPENAI_API_KEY),
  *                          e.g. Azure OpenAI gateway, Ollama, vLLM on the intranet.
  *   gemini              -> Google Gemini API, generateContent (GEMINI_API_KEY)
+ *   grok                -> xAI Grok, OpenAI-compatible chat completions at https://api.x.ai/v1 (XAI_API_KEY)
  * Keys never leave this module.
  */
 export interface AiResult {
@@ -18,7 +19,8 @@ export interface AiResult {
 
 export function aiStatus(): { configured: boolean; provider?: string; model?: string; hint?: string } {
   const p = env.aiProvider;
-  if (!p) return { configured: false, hint: "Set AI_PROVIDER to anthropic, gemini, openai or openai-compatible, plus the matching API key." };
+  if (!p) return { configured: false, hint: "Set AI_PROVIDER to grok, anthropic, gemini, openai or openai-compatible, plus the matching API key." };
+  if (p === "grok" && !env.xaiKey) return { configured: false, provider: p, hint: "XAI_API_KEY is missing." };
   if (p === "gemini" && !env.geminiKey) return { configured: false, provider: p, hint: "GEMINI_API_KEY is missing." };
   if (p === "anthropic" && !env.anthropicKey) return { configured: false, provider: p, hint: "ANTHROPIC_API_KEY is missing." };
   if ((p === "openai" || p === "openai-compatible") && !env.openaiKey && p === "openai") return { configured: false, provider: p, hint: "OPENAI_API_KEY is missing." };
@@ -28,19 +30,21 @@ export function aiStatus(): { configured: boolean; provider?: string; model?: st
 /** AI_MODEL is honoured only when it belongs to the active provider's family, so a stale value cannot break every call. */
 function matchesProvider(model: string): boolean {
   if (env.aiProvider === "gemini") return /^gemini/i.test(model);
+  if (env.aiProvider === "grok") return /^grok/i.test(model);
   if (env.aiProvider === "anthropic") return /^claude/i.test(model);
   return true;
 }
 
 function defaultModel(): string {
   if (env.aiModel && matchesProvider(env.aiModel)) return env.aiModel;
-  return env.aiProvider === "anthropic" ? "claude-sonnet-5" : env.aiProvider === "gemini" ? "gemini-3.8-flash" : "gpt-4o-mini";
+  return env.aiProvider === "anthropic" ? "claude-sonnet-5" : env.aiProvider === "gemini" ? "gemini-3.8-flash" : env.aiProvider === "grok" ? GROK_DEFAULT : "gpt-4o-mini";
 }
 
 /** Cheaper model for short tasks; falls back to the main model when none is configured. */
 export function liteModel(): string {
   if (env.aiModelLite && matchesProvider(env.aiModelLite)) return env.aiModelLite;
   if (env.aiProvider === "gemini") return "gemini-3.5-flash-lite";
+  if (env.aiProvider === "grok") return GROK_DEFAULT;
   if (env.aiProvider === "anthropic") return "claude-haiku-5-5";
   if (env.aiProvider === "openai") return "gpt-4o-mini";
   return defaultModel();
@@ -48,6 +52,16 @@ export function liteModel(): string {
 
 export function modelFor(tier: "lite" | "standard" | undefined): string {
   return tier === "lite" ? liteModel() : defaultModel();
+}
+
+/** xAI model used when AI_MODEL / AI_MODEL_LITE are not set (cheapest current text model; override in Render). */
+const GROK_DEFAULT = "grok-4.3";
+
+/** Base URL, key and label for the OpenAI-compatible providers (openai, openai-compatible, grok). */
+function compat(): { base: string; key: string; label: string } {
+  if (env.aiProvider === "grok") return { base: "https://api.x.ai/v1", key: env.xaiKey, label: "xAI" };
+  if (env.aiProvider === "openai") return { base: "https://api.openai.com/v1", key: env.openaiKey, label: "OpenAI" };
+  return { base: env.openaiBaseUrl.replace(/\/$/, ""), key: env.openaiKey, label: "AI provider" };
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -115,15 +129,15 @@ async function completeOnce(system: string, user: string, opts: { maxTokens?: nu
       if (!text && data.promptFeedback?.blockReason) throw new AiError("Gemini blocked the request", 400, `blockReason: ${data.promptFeedback.blockReason}`);
       return { text: opts.json ? extractJson(text) : text, model: data.modelVersion ?? model, usage: data.usageMetadata ? { input: data.usageMetadata.promptTokenCount ?? 0, output: data.usageMetadata.candidatesTokenCount ?? 0 } : undefined };
     }
-    const base = env.aiProvider === "openai" ? "https://api.openai.com/v1" : env.openaiBaseUrl.replace(/\/$/, "");
+    const { base, key, label } = compat();
     const res = await fetch(`${base}/chat/completions`, {
       method: "POST",
-      headers: { "content-type": "application/json", ...(env.openaiKey ? { authorization: `Bearer ${env.openaiKey}` } : {}) },
+      headers: { "content-type": "application/json", ...(key ? { authorization: `Bearer ${key}` } : {}) },
       body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: "system", content: system }, { role: "user", content: user }], ...(opts.json ? { response_format: { type: "json_object" } } : {}) }),
       signal: controller.signal,
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new AiError(`AI provider error (${res.status})`, res.status === 429 ? 429 : 502, data?.error?.message);
+    if (!res.ok) throw new AiError(`${label} API error (${res.status})`, res.status === 429 ? 429 : 502, typeof data?.error === "string" ? data.error : data?.error?.message);
     const text = data.choices?.[0]?.message?.content ?? "";
     return { text: opts.json ? extractJson(text) : text, model: data.model ?? model, usage: data.usage ? { input: data.usage.prompt_tokens, output: data.usage.completion_tokens } : undefined };
   } catch (e) {
@@ -214,15 +228,15 @@ async function completeWithImagesOnce(system: string, user: string, images: Imag
     // OpenAI / compatible: image_url with data URIs.
     const content: Array<Record<string, unknown>> = [{ type: "text", text: user }];
     for (const img of images) { content.push({ type: "text", text: img.label }); content.push({ type: "image_url", image_url: { url: `data:${img.mimeType};base64,${img.base64}`, detail: "low" } }); }
-    const base = env.aiProvider === "openai" ? "https://api.openai.com/v1" : env.openaiBaseUrl.replace(/\/$/, "");
+    const { base, key, label } = compat();
     const res = await fetch(`${base}/chat/completions`, {
       method: "POST",
-      headers: { "content-type": "application/json", ...(env.openaiKey ? { authorization: `Bearer ${env.openaiKey}` } : {}) },
+      headers: { "content-type": "application/json", ...(key ? { authorization: `Bearer ${key}` } : {}) },
       body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: "system", content: system }, { role: "user", content }], ...(opts.json ? { response_format: { type: "json_object" } } : {}) }),
       signal: controller.signal,
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new AiError(`AI provider error (${res.status})`, res.status === 429 ? 429 : 502, data?.error?.message);
+    if (!res.ok) throw new AiError(`${label} API error (${res.status})`, res.status === 429 ? 429 : 502, typeof data?.error === "string" ? data.error : data?.error?.message);
     const text = data.choices?.[0]?.message?.content ?? "";
     return { text: opts.json ? extractJson(text) : text, model: data.model ?? model, usage: data.usage ? { input: data.usage.prompt_tokens, output: data.usage.completion_tokens } : undefined };
   } catch (e) {

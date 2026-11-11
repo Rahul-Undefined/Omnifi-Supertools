@@ -127,6 +127,57 @@ describe("Gemini provider", () => {
   });
 });
 
+describe("Grok provider", () => {
+  it("calls the xAI OpenAI-compatible endpoint with a bearer key and reads the choice text", async () => {
+    vi.resetModules();
+    process.env.AI_PROVIDER = "grok";
+    process.env.XAI_API_KEY = "test-key-not-real";
+    process.env.AI_MODEL = "gemini-3.8-flash"; // stale value from another provider must be ignored
+    const calls: { url: string; init: RequestInit }[] = [];
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
+      calls.push({ url: String(url), init: init ?? {} });
+      return new Response(JSON.stringify({ choices: [{ message: { content: "Hello from Grok" } }], model: "grok-4.3", usage: { prompt_tokens: 7, completion_tokens: 2 } }), { status: 200 });
+    }) as typeof fetch;
+    try {
+      const { complete, aiStatus, liteModel } = await import("@/lib/server/ai");
+      expect(aiStatus()).toMatchObject({ configured: true, provider: "grok", model: "grok-4.3" });
+      expect(liteModel()).toBe("grok-4.3");
+      const r = await complete("You are terse.", "Say hi", { maxTokens: 50, json: true });
+      expect(r.text).toBe("Hello from Grok");
+      expect(r.usage).toEqual({ input: 7, output: 2 });
+      expect(calls[0].url).toBe("https://api.x.ai/v1/chat/completions");
+      const headers = calls[0].init.headers as Record<string, string>;
+      expect(headers.authorization).toBe("Bearer test-key-not-real");
+      const body = JSON.parse(String(calls[0].init.body));
+      expect(body.model).toBe("grok-4.3");
+      expect(body.messages[0]).toEqual({ role: "system", content: "You are terse." });
+      expect(body.response_format).toEqual({ type: "json_object" });
+    } finally {
+      globalThis.fetch = realFetch;
+      delete process.env.AI_PROVIDER; delete process.env.XAI_API_KEY; delete process.env.AI_MODEL;
+    }
+  });
+
+  it("reports a missing key and surfaces xAI error strings", async () => {
+    vi.resetModules();
+    process.env.AI_PROVIDER = "grok";
+    delete process.env.XAI_API_KEY;
+    try {
+      const { aiStatus } = await import("@/lib/server/ai");
+      expect(aiStatus()).toMatchObject({ configured: false, provider: "grok", hint: "XAI_API_KEY is missing." });
+    } finally { delete process.env.AI_PROVIDER; }
+    vi.resetModules();
+    process.env.AI_PROVIDER = "grok"; process.env.XAI_API_KEY = "test-key-not-real";
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async () => new Response(JSON.stringify({ code: "400", error: "Bad data: Messages cannot be empty" }), { status: 400 })) as typeof fetch;
+    try {
+      const { complete } = await import("@/lib/server/ai");
+      await expect(complete("s", "u")).rejects.toMatchObject({ message: "xAI API error (400)", hint: "Bad data: Messages cannot be empty" });
+    } finally { globalThis.fetch = realFetch; delete process.env.AI_PROVIDER; delete process.env.XAI_API_KEY; }
+  });
+});
+
 describe("AI run: free-tier controls", () => {
   it("answers identical requests from cache (one provider call), routes lite tasks to the lite model, and paces globally", async () => {
     vi.resetModules();
