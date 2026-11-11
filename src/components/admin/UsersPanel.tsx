@@ -65,6 +65,7 @@ export function UsersPanel() {
 
       <form onSubmit={create} className="rounded-control border border-border bg-surface p-5">
         <h3 className="mb-3 text-sm font-semibold text-foreground">Add a named account</h3>
+        <p className="mb-3 text-xs text-muted">Named accounts sign in on the login page via &ldquo;Sign in with username and password&rdquo; (the button under &ldquo;Continue with Microsoft&rdquo;), using the username or email and the temporary password you set. Share the password with the person directly, never by chat.</p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <div><Label htmlFor="u-username">Username</Label><Input id="u-username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required placeholder="priya" /></div>
           <div><Label htmlFor="u-name">Full name</Label><Input id="u-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Priya Sharma" /></div>

@@ -108,7 +108,11 @@ function LoginForm() {
                 <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="h-4 w-4 accent-[var(--indigo)]" /> Keep me signed in on this device
               </label>
               {!showLocal && (
-                <button type="button" onClick={() => setShowLocal(true)} className="text-xs text-muted hover:text-accent">Sign in with a username and password instead</button>
+                <>
+                  <div className="flex items-center gap-3 text-xs text-muted"><span className="h-px flex-1 bg-border" />or<span className="h-px flex-1 bg-border" /></div>
+                  <button type="button" onClick={() => setShowLocal(true)} className="flex h-11 w-full items-center justify-center rounded-control border border-border bg-surface-2 text-sm font-medium text-foreground transition-colors hover:border-accent hover:bg-surface">Sign in with username and password</button>
+                  <p className="text-xs text-muted">For accounts created by an administrator (contractors or people without an Omnifi Microsoft login).</p>
+                </>
               )}
             </div>
           )}
