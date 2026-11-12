@@ -83,6 +83,15 @@ export function modelFor(tier: "lite" | "standard" | undefined): string {
   return tier === "lite" ? liteModel() : defaultModel();
 }
 
+/**
+ * Token budget for OpenAI-compatible calls. Reasoning models (gpt-oss on Groq) spend part of max_tokens on hidden
+ * reasoning, so a tight budget comes back with empty text: ask for low reasoning effort and add headroom.
+ */
+function compatBudget(model: string, maxTokens: number): Record<string, unknown> {
+  if (/gpt-oss|qwen3/i.test(model)) return { max_tokens: maxTokens + 600, reasoning_effort: "low" };
+  return { max_tokens: maxTokens };
+}
+
 /** Base URL, key and label for the OpenAI-compatible providers (openai, openai-compatible, grok, groq). */
 function compat(): { base: string; key: string; label: string } {
   const p = provider();
@@ -202,13 +211,14 @@ async function completeOnce(system: string, user: string, opts: { maxTokens?: nu
     const res = await fetch(`${base}/chat/completions`, {
       method: "POST",
       headers: { "content-type": "application/json", ...(key ? { authorization: `Bearer ${key}` } : {}) },
-      body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: "system", content: system }, { role: "user", content: user }], ...(opts.json ? { response_format: { type: "json_object" } } : {}) }),
+      body: JSON.stringify({ model, ...compatBudget(model, maxTokens), messages: [{ role: "system", content: system }, { role: "user", content: user }], ...(opts.json ? { response_format: { type: "json_object" } } : {}) }),
       signal: controller.signal,
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new AiError(`${label} API error (${res.status})`, res.status === 429 ? 429 : 502, typeof data?.error === "string" ? data.error : data?.error?.message);
     noteLimits(res, model);
     const text = data.choices?.[0]?.message?.content ?? "";
+    if (!String(text).trim()) throw new AiError(`${label} returned no text`, 502, data.choices?.[0]?.finish_reason === "length" ? "The model spent its whole token budget on reasoning. Try again; if it repeats, tell the admin." : data.choices?.[0]?.finish_reason ? `finish_reason: ${data.choices[0].finish_reason}` : undefined);
     return { text: opts.json ? extractJson(text) : text, model: data.model ?? model, usage: data.usage ? { input: data.usage.prompt_tokens, output: data.usage.completion_tokens } : undefined };
   } catch (e) {
     if (e instanceof AiError) throw e;
@@ -302,13 +312,14 @@ async function completeWithImagesOnce(system: string, user: string, images: Imag
     const res = await fetch(`${base}/chat/completions`, {
       method: "POST",
       headers: { "content-type": "application/json", ...(key ? { authorization: `Bearer ${key}` } : {}) },
-      body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: "system", content: system }, { role: "user", content }], ...(opts.json ? { response_format: { type: "json_object" } } : {}) }),
+      body: JSON.stringify({ model, ...compatBudget(model, maxTokens), messages: [{ role: "system", content: system }, { role: "user", content }], ...(opts.json ? { response_format: { type: "json_object" } } : {}) }),
       signal: controller.signal,
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new AiError(`${label} API error (${res.status})`, res.status === 429 ? 429 : 502, typeof data?.error === "string" ? data.error : data?.error?.message);
     noteLimits(res, model);
     const text = data.choices?.[0]?.message?.content ?? "";
+    if (!String(text).trim()) throw new AiError(`${label} returned no text`, 502, data.choices?.[0]?.finish_reason === "length" ? "The model spent its whole token budget on reasoning. Try again; if it repeats, tell the admin." : data.choices?.[0]?.finish_reason ? `finish_reason: ${data.choices[0].finish_reason}` : undefined);
     return { text: opts.json ? extractJson(text) : text, model: data.model ?? model, usage: data.usage ? { input: data.usage.prompt_tokens, output: data.usage.completion_tokens } : undefined };
   } catch (e) {
     if (e instanceof AiError) throw e;

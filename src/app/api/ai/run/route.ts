@@ -51,8 +51,9 @@ export async function POST(req: Request) {
       // Provider and model names are admin-only information.
       ...(isAdmin ? { model: r.model, usage: r.usage } : {}),
     });
-    if (cached) {
-      const r = JSON.parse(cached) as { text: string; model: string; usage?: { input: number; output: number } };
+    const cachedResult = cached ? (JSON.parse(cached) as { text: string; model: string; usage?: { input: number; output: number } }) : null;
+    if (cachedResult && cachedResult.text?.trim()) {
+      const r = cachedResult;
       await store().recordAudit({ at: Date.now(), actor: user.id, action: `ai.${task}`, detail: `cache hit, ${input.length} chars` });
       return NextResponse.json(present(r, await peekAllowance(user.id, env.aiUserQuota, env.aiUserWindowHours), true));
     }
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
       await refundAllowance(user.id, env.aiUserWindowHours);
       throw e;
     }
-    if (cacheMs > 0) await store().cacheSet(cacheKey, JSON.stringify(result));
+    if (cacheMs > 0 && result.text.trim()) await store().cacheSet(cacheKey, JSON.stringify(result));
     await store().recordAudit({ at: Date.now(), actor: user.id, action: `ai.${task}`, detail: `${input.length} chars, ${Date.now() - started} ms, ${result.model}${result.usage ? `, ${result.usage.input}+${result.usage.output} tok` : ""}` });
     return NextResponse.json(present(result, mine, false));
   } catch (e) {

@@ -2,6 +2,11 @@
 
 Newest first. Dates are when the change went live on https://omnifi-supertools.onrender.com.
 
+## 2026-11-12 — Email threads, Groq reasoning fix
+
+- **New: Email thread summary (EML)** in AI (beta): save a mail chain from Outlook as .eml and get gist, people, timeline, decisions, open items with owners, amounts and documents, plus an optional reply draft. **New: Email (EML) reader** in Files: the same export as plain text with the attachment list, no AI.
+- **Fix:** AI tools could return an empty file with the Groq gpt-oss models (the model spent its whole token budget on hidden reasoning; the blank answer was then cached). Reasoning effort is now set low with token headroom, an empty answer is treated as a provider error (allowance refunded, nothing cached) and blank cache entries are ignored.
+
 ## 2026-11-11 — Groq AI provider, prompt builder, admin insight, durable data
 
 - **Request an account (self-service, admin approved):** people without an Omnifi Microsoft login click "Request an account" on the login page, enter name, email and a password; the request appears on the admin page under "Account requests waiting for approval" with Approve / Reject; after approval they sign in with that email and password via the "Sign in with username and password" button. Pending accounts cannot sign in and the login page says so. Named accounts live in the store, so the GitHub backup keeps them across deploys.

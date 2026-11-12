@@ -124,6 +124,15 @@ export function emailList(rng: Rng): string {
   return list.join("\n");
 }
 
+/** Outlook-style .eml export: multipart (text + html) with one PDF attachment and a quoted earlier reply. */
+export function emlFile(rng: Rng): File {
+  const from = `${rng.name()} <${rng.pick(FIRST).toLowerCase()}@example.com>`;
+  const subject = `RE: ${rng.words(3)}`;
+  const body = `Hi,\n\n${rng.paragraph(2)}\nTotal due: $${rng.amount(100, 9000)} by ${rng.date()}.\n\nOn ${rng.date()}, Rahul Ojha wrote:\n> ${rng.sentence()}\n> ${rng.sentence()}`;
+  const eml = ["From: " + from, "To: Rahul Ojha <rahul@myomnifi.com>", "Subject: " + subject, "Date: Tue, 11 Nov 2026 09:15:00 +0530", "MIME-Version: 1.0", 'Content-Type: multipart/mixed; boundary="b1"', "", "--b1", 'Content-Type: multipart/alternative; boundary="b2"', "", "--b2", "Content-Type: text/plain; charset=utf-8", "", body, "--b2", "Content-Type: text/html; charset=utf-8", "", `<html><body>${body.replace(/\n/g, "<br>")}</body></html>`, "--b2--", "--b1", 'Content-Type: application/pdf; name="statement.pdf"', "Content-Transfer-Encoding: base64", 'Content-Disposition: attachment; filename="statement.pdf"', "", "JVBERi0xLjQKJeLjz9MK", "--b1--", ""].join("\r\n");
+  return new File([eml], `thread-${rng.int(100, 999)}.eml`, { type: "message/rfc822" });
+}
+
 /* ----- Binary fixtures ----- */
 
 export function textFile(name: string, text: string, mime = "text/plain"): File {
@@ -371,7 +380,7 @@ export async function webmVideo(rng: Rng, seconds = 2): Promise<File> {
 
 /* ----- Choosing an input format for a tool ----- */
 
-export type InputKind = "pdf" | "png" | "jpg" | "gif" | "csv" | "xlsx" | "docx" | "pptx" | "zip" | "txt" | "wav" | "webm" | "any";
+export type InputKind = "pdf" | "png" | "jpg" | "gif" | "csv" | "xlsx" | "docx" | "pptx" | "zip" | "txt" | "wav" | "webm" | "eml" | "any";
 
 export function inputKinds(tool: ToolDefinition): InputKind[] {
   const kinds: InputKind[] = [];
@@ -390,6 +399,7 @@ export function inputKinds(tool: ToolDefinition): InputKind[] {
     else if (s === "pptx") add("pptx");
     else if (s === "zip") add("zip");
     else if (s === "txt" || s === "md") add("txt");
+    else if (s === "eml") add("eml");
     else if (s.startsWith("audio") || ["mp3", "wav", "m4a", "ogg", "aac", "flac"].includes(s)) add("wav");
     else if (s.startsWith("video") || ["mp4", "mov", "mkv", "webm", "avi"].includes(s)) add("webm");
   }

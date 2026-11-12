@@ -100,6 +100,10 @@ async function fileToText(file: File, onProgress?: (f: number, l?: string) => vo
     const office = await import("../office");
     return (await office.docxText([file], { options: {} })).text ?? "";
   }
+  if (ext === "eml" || file.type === "message/rfc822") {
+    const { parseEml, emlToText } = await import("../shared/eml");
+    return emlToText(await parseEml(file));
+  }
   if (file.type.startsWith("image/")) {
     const pdf = await import("../pdf");
     return (await pdf.ocr([file], { options: { lang: "eng" }, onProgress })).text ?? "";
@@ -126,5 +130,6 @@ const fileTask = (task: string, ext = "txt"): FileProcessor => async (files, { o
 };
 
 export const summarizeFile = fileTask("summarize");
+export const emailThread = fileTask("emailThread");
 export const documentQa = fileTask("documentQa");
 export const invoiceExtract = fileTask("invoiceExtract", "json");

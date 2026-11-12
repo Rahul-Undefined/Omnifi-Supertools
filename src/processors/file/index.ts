@@ -137,6 +137,23 @@ export const sizes: FileProcessor = async (files) => {
   return textOutput(text, entries, { Total: formatBytes(total), Files: String(entries.length), Largest: entries[0]?.name ?? "" });
 };
 
+/** Outlook/Gmail .eml to plain text: headers, body (HTML stripped), quoted replies, attachment list. Browser only. */
+export const emlText: FileProcessor = async (files, { onProgress }) => {
+  const { parseEml, emlToText } = await import("../shared/eml");
+  const outputs: ProcessorFile[] = [];
+  let all = "";
+  let attachments = 0;
+  for (let i = 0; i < files.length; i++) {
+    const m = await parseEml(files[i]);
+    attachments += m.attachments.length;
+    const text = emlToText(m);
+    outputs.push(fileFromText(`${baseName(files[i].name)}.txt`, text));
+    all += (files.length > 1 ? `===== ${files[i].name} =====\n` : "") + text + "\n\n";
+    onProgress?.((i + 1) / files.length);
+  }
+  return { files: outputs, text: all.trim(), stats: { Messages: String(files.length), Attachments: String(attachments) } };
+};
+
 export const base64: FileProcessor = async (files, { options }) => {
   const outputs: ProcessorFile[] = [];
   let text = "";

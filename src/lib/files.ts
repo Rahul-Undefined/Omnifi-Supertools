@@ -31,6 +31,7 @@ export async function sniffFile(file: File): Promise<string | null> {
 
 const extMime: Record<string, string> = {
   pdf: "application/pdf",
+  eml: "message/rfc822",
   png: "image/png",
   jpg: "image/jpeg",
   jpeg: "image/jpeg",

@@ -127,6 +127,7 @@ async function filesFor(tool: ToolDefinition, rng: Rng, opts: CheckOptions): Pro
       case "pptx": return F.pptxFile(rng);
       case "zip": return F.zipFile(rng, [F.textFile("a.txt", rng.paragraph()), await F.pngImage(rng, 64, 64)]);
       case "txt": return F.textFile(`notes-${rng.int(100, 999)}.txt`, F.proseSample(rng));
+      case "eml": return F.emlFile(rng);
       case "wav": return F.wavFile(rng);
       case "webm": return F.webmVideo(rng);
       case "any": return rng.next() > 0.5 ? F.textFile(`notes-${rng.int(100, 999)}.txt`, F.proseSample(rng)) : F.pngImage(rng, 200, 120);
@@ -272,6 +273,7 @@ async function specialPlan(tool: ToolDefinition, rng: Rng, opts: CheckOptions): 
     case "duplicate-finder": { const same = rng.paragraph(); return { files: [F.textFile("a.txt", same), F.textFile("b.txt", same), F.textFile("c.txt", rng.paragraph())], verifies: "a/b reported as duplicates", verify: async (o, h) => { const t = o.text ?? (o.files[0] ? await h.text(first(o)) : ""); if (!/a\.txt/.test(t) || !/b\.txt/.test(t)) throw new Error("Duplicate pair not reported"); } }; }
     case "file-base64": return { files: [F.textFile("a.txt", "abc")], verifies: "YWJj", verify: async (o, h) => { const t = o.text ?? (o.files[0] ? await h.text(first(o)) : ""); if (!/YWJj/.test(t)) throw new Error("Base64 of 'abc' not found"); } };
     case "tar-tools": return { files: [F.textFile("a.txt", rng.paragraph())] };
+    case "eml-reader": return { files: [F.emlFile(rng)], verifies: "subject, quoted reply and attachment listed", verify: async (o, h) => { const t = await h.text(first(o)); if (!/^Subject: RE:/m.test(t) || !/> /.test(t) || !/statement\.pdf/.test(t)) throw new Error(`Got ${JSON.stringify(t.slice(0, 120))}`); } };
     case "batch-renamer": return { files: [F.textFile("a.txt", "1"), F.textFile("b.txt", "2")], options: { pattern: "{n}-{name}", find: "", replace: "" }, verifies: "2 renamed files + rename map", verify: async (o, h) => { const n = await h.zipNames(first(o)); const renamed = n.filter((x) => x.endsWith(".txt")); if (renamed.length !== 2 || !n.includes("rename-map.csv")) throw new Error(`Zip contains ${n.join(", ")}`); if (!renamed.every((x) => /^\d+-/.test(x))) throw new Error(`Pattern not applied: ${renamed.join(", ")}`); } };
     /* ----- Text tools with blank-but-required options or exact checks ----- */
     case "case-converter": return { text: "hello Checker world", options: { to: "upper" }, verifies: "uppercase", verify: (o) => { if (o.text !== "HELLO CHECKER WORLD") throw new Error(`Got ${JSON.stringify(o.text)}`); } };
@@ -316,6 +318,7 @@ async function specialPlan(tool: ToolDefinition, rng: Rng, opts: CheckOptions): 
     case "markdown-to-pptx": return { text: F.markdownSample(rng), verifies: "slides created", verify: async (o, h) => { const n = (await h.zipNames(first(o))).filter((x) => /^ppt\/slides\/slide\d+\.xml$/.test(x)).length; if (n < 2) throw new Error(`Only ${n} slides`); } };
     case "markdown-to-docx": return { text: F.markdownSample(rng), verifies: "heading present", verify: async (o, h) => { if (!/Highlights/.test(await h.zipText(first(o), "word/document.xml"))) throw new Error("Heading text missing"); } };
     case "qr-generator": return { text: "https://omnifi.co", verifies: "PNG output" };
+    case "ai-email-thread": return { files: [F.emlFile(rng)] };
     case "ai-document-qa": return { files: [await F.pdfFile(rng, { pages: 1 })], options: { question: "What is the account number?" } };
     default: return null;
   }

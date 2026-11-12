@@ -83,7 +83,7 @@ export const tasks: Record<string, TaskSpec> = {
     system: `${BASE} You write clear, specific email subject lines.`,
     build: (i) => `Suggest 5 subject lines for this email, from most direct to most friendly, max 60 characters each, one per line, no numbering.\n\n${wrap(i)}`,
     tier: "lite",
-    maxTokens: 150,
+    maxTokens: 300,
     maxInputChars: 6_000,
   },
   explainJargon: {
@@ -138,6 +138,13 @@ export const tasks: Record<string, TaskSpec> = {
     tier: "lite",
     maxTokens: 1500,
     maxInputChars: 15_000,
+  },
+  emailThread: {
+    system: `${BASE} You summarise email conversations for an accounting firm. Read the whole thread (latest message first in Outlook exports, earlier replies quoted below). Never invent facts, amounts, dates or commitments.`,
+    build: (i, o) => `Summarise this email thread for ${str(o.audience, "the person who has to act on it")}.\nReturn these sections with short headings:\n1. One-line gist.\n2. Who is involved (names, roles if clear).\n3. Timeline: each message in chronological order as "date, sender: what they said or asked" (one line each).\n4. Decisions and agreements.\n5. Open questions and action items, each with owner and deadline if stated.\n6. Amounts, dates and documents mentioned.\n${str(o.draft, "no") === "yes" ? "7. Suggested reply: a short, professional draft that addresses the open items (mark anything to confirm in [square brackets])." : ""}\nKeep it under ${str(o.length, "300")} words excluding the draft.\n\n${wrap(i)}`,
+    tier: "standard",
+    maxTokens: 1200,
+    maxInputChars: 60_000,
   },
   promptBuilder: {
     system: `${BASE} You are an expert prompt engineer. You turn a rough description of what someone wants from an AI assistant into one complete, well-structured prompt they can paste into any assistant (ChatGPT, Claude, Gemini, Copilot). Never answer the request yourself; only write the prompt.`,
